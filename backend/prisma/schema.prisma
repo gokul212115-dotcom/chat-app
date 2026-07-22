@@ -18,106 +18,109 @@ model User {
   name          String
   avatarUrl     String?
   statusMessage String?
-  isOnline      Boolean
+  isOnline      Boolean   @default(false)
   lastSeenAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  conversations Conversation[]
-  contacts      Contact[]
+  ownedContacts    Contact[]                 @relation("OwnerContacts")
+  contactOf        Contact[]                 @relation("ContactUser")
+  participations   ConversationParticipant[]
+  sentMessages     Message[]                 @relation("SentMessages")
+  messageStatuses  MessageStatus[]
+  messageReactions MessageReaction[]
 }
 
 model Contact {
-  id           Int       @id @default(autoincrement())
-  ownerId      Int
-  contactUser  User      @relation(fields: [contactUserId], references: [id])
+  id            Int      @id @default(autoincrement())
+  owner         User     @relation("OwnerContacts", fields: [ownerId], references: [id])
+  ownerId       Int
+  contactUser   User     @relation("ContactUser", fields: [contactUserId], references: [id])
   contactUserId Int
-  createdAt    DateTime  @default(now())
+  createdAt     DateTime @default(now())
 
   @@unique([ownerId, contactUserId])
 }
 
 model Conversation {
-  id                Int                 @id @default(autoincrement())
-  isGroup           Boolean
-  groupName         String?
-  groupAvatarUrl    String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  id             Int      @id @default(autoincrement())
+  isGroup        Boolean  @default(false)
+  groupName      String?
+  groupAvatarUrl String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  participants      ConversationParticipant[]
-  messages          Message[]
+  participants ConversationParticipant[]
+  messages     Message[]
 }
 
 model ConversationParticipant {
-  id              Int       @id @default(autoincrement())
-  conversationId  Int
-  userId          Int
-  role            Role      @default(MEMBER)
-  joinedAt        DateTime  @default(now())
-  isMuted         Boolean   @default(false)
-  isArchived      Boolean   @default(false)
-
-  user            User      @relation(fields: [userId], references: [id])
-  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  id             Int          @id @default(autoincrement())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId Int
+  user           User         @relation(fields: [userId], references: [id])
+  userId         Int
+  role           Role         @default(MEMBER)
+  joinedAt       DateTime     @default(now())
+  isMuted        Boolean      @default(false)
+  isArchived     Boolean      @default(false)
 
   @@unique([conversationId, userId])
 }
 
 model Message {
-  id                Int       @id @default(autoincrement())
-  conversationId    Int
-  senderId          Int
-  content           String?
-  messageType       MessageType @default(TEXT)
-  replyToMessageId  Int?
-  isEdited          Boolean   @default(false)
-  isDeletedForEveryone Boolean @default(false)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                   Int          @id @default(autoincrement())
+  conversation         Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId       Int
+  sender               User         @relation("SentMessages", fields: [senderId], references: [id])
+  senderId             Int
+  content              String?
+  messageType          MessageType  @default(TEXT)
+  replyToMessage       Message?     @relation("ReplyTo", fields: [replyToMessageId], references: [id])
+  replyToMessageId     Int?
+  repliedBy            Message[]    @relation("ReplyTo")
+  isEdited             Boolean      @default(false)
+  isDeletedForEveryone Boolean      @default(false)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
-  conversation      Conversation @relation(fields: [conversationId], references: [id])
-  sender            User       @relation(fields: [senderId], references: [id])
-  replyToMessage    Message?   @relation("replyTo", fields: [replyToMessageId], references: [id])
-
-  @@unique([conversationId, replyToMessageId])
+  statuses    MessageStatus[]
+  reactions   MessageReaction[]
+  attachments MediaAttachment[]
 }
 
 model MessageStatus {
   id        Int      @id @default(autoincrement())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   messageId Int
+  user      User     @relation(fields: [userId], references: [id])
   userId    Int
   status    Status   @default(SENT)
   updatedAt DateTime @updatedAt
-
-  message User @relation(fields: [messageId], references: [id])
-  user    User @relation(fields: [userId], references: [id])
 
   @@unique([messageId, userId])
 }
 
 model MessageReaction {
   id        Int      @id @default(autoincrement())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   messageId Int
+  user      User     @relation(fields: [userId], references: [id])
   userId    Int
   emoji     String
   createdAt DateTime @default(now())
-
-  message User @relation(fields: [messageId], references: [id])
-  user    User @relation(fields: [userId], references: [id])
 
   @@unique([messageId, userId, emoji])
 }
 
 model MediaAttachment {
-  id            Int       @id @default(autoincrement())
-  messageId     Int
-  url           String
-  mimeType      String
-  sizeBytes     Int
+  id              Int      @id @default(autoincrement())
+  message         Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId       Int
+  url             String
+  mimeType        String
+  sizeBytes       Int
   durationSeconds Float?
-
-  message Message @relation(fields: [messageId], references: [id])
 
   @@unique([messageId, url])
 }
