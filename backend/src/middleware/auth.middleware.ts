@@ -1,15 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { verifyAccessToken } from '../services/auth.service';
 
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
-    req.userId = decoded.userId as number;
+    const decoded = verifyAccessToken(token) as { userId: number };
+    req.userId = decoded.userId;
     next();
   } catch (error) {
     res.status(401).json({ message: 'Invalid token' });
