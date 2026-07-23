@@ -67,3 +67,21 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export interface UserSearchResult {
+  id: number;
+  name: string;
+  phoneNumber: string;
+  avatarUrl: string | null;
+}
+
+export async function findUserByPhone(phoneNumber: string): Promise<UserSearchResult | null> {
+  try {
+    const response = await api.get<UserSearchResult>('/users/search', {
+      params: { phoneNumber },
+    });
+    return response.data;
+  } catch (error) {
+    return null;
+  }
+}
