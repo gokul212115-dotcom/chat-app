@@ -24,7 +24,7 @@ export async function addContact(req: Request, res: Response) {
     const existingContact = await prisma.contact.findFirst({
       where: {
         ownerId: userId,
-        contactId: contactUserId,
+        contactUserId: contactUserId,
       },
     });
 
@@ -35,7 +35,7 @@ export async function addContact(req: Request, res: Response) {
     const contact = await prisma.contact.create({
       data: {
         ownerId: userId,
-        contactId: contactUserId,
+        contactUserId: contactUserId,
       },
       include: {
         contactUser: true,
@@ -67,7 +67,7 @@ export async function listContacts(req: Request, res: Response) {
     });
 
     const result = contacts.map(contact => ({
-      id: contact.contactId,
+      id: contact.contactUserId,
       name: contact.contactUser.name,
       phoneNumber: contact.contactUser.phoneNumber,
       avatarUrl: contact.contactUser.avatarUrl,
@@ -90,17 +90,16 @@ export async function removeContact(req: Request, res: Response) {
     }
 
     const { contactUserId } = req.params as { contactUserId: string };
+    const parsedContactUserId = parseInt(contactUserId, 10);
 
-    const contactId = parseInt(contactUserId, 10);
-
-    if (isNaN(contactId)) {
+    if (isNaN(parsedContactUserId)) {
       return res.status(400).json({ message: 'Invalid contact user ID' });
     }
 
     await prisma.contact.deleteMany({
       where: {
         ownerId: userId,
-        contactId,
+        contactUserId: parsedContactUserId,
       },
     });
 

@@ -27,43 +27,49 @@ export async function createConversation(req: Request, res: Response) {
       return res.status(400).json({ message: 'For a 1:1 conversation, exactly one participant is required' });
     }
 
-    const existingConversation = await prisma.conversation.findFirst({
-      where: {
-        participants: {
-          every: { userId },
-        },
-        AND: [
-          {
-            participants: {
-              some: { userId: participantUserIds[0] },
-            },
-          },
-        ],
-      },
-      include: {
-        participants: true,
-      },
-    });
+    if (!isGroup) {
+      const otherUserId = participantUserIds[0];
 
-    if (existingConversation) {
-      return res.json(existingConversation);
+      const existingConversation = await prisma.conversation.findFirst({
+        where: {
+          isGroup: false,
+          AND: [
+            { participants: { some: { userId } } },
+            { participants: { some: { userId: otherUserId } } },
+          ],
+        },
+        include: {
+          participants: {
+            include: { user: true },
+          },
+        },
+      });
+
+      if (existingConversation) {
+        return res.json(existingConversation);
+      }
     }
 
     const conversation = await prisma.conversation.create({
       data: {
-        isGroup,
+        isGroup: isGroup ?? false,
         groupName,
         participants: {
           createMany: {
-            data: participantUserIds.map(participantUserId => ({
-              userId: participantUserId,
-              role: isGroup ? 'ADMIN' : 'MEMBER',
-            })),
+            data: [
+              { userId, role: isGroup ? 'ADMIN' : 'MEMBER' },
+              ...participantUserIds.map(participantUserId => ({
+                userId: participantUserId,
+                role: 'MEMBER' as const,
+              })),
+            ],
           },
         },
       },
       include: {
-        participants: true,
+        participants: {
+          include: { user: true },
+        },
       },
     });
 
@@ -84,7 +90,8 @@ export async function listConversations(req: Request, res: Response) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { cursor, limit = 20 } = req.query as { cursor?: string; limit?: string };
+    const { cursor, limit: limitQuery } = req.query as { cursor?: string; limit?: string };
+    const limit = parseInt(limitQuery ?? '20', 10);
 
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -93,22 +100,25 @@ export async function listConversations(req: Request, res: Response) {
         },
       },
       include: {
-        participants: true,
+        participants: {
+          include: { user: true },
+        },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1,
         },
       },
       cursor: cursor ? { id: parseInt(cursor, 10) } : undefined,
-      take: parseInt(limit, 10) + 1,
+      skip: cursor ? 1 : 0,
+      take: limit + 1,
       orderBy: { updatedAt: 'desc' },
     });
 
-    const nextCursor = conversations.length > parseInt(limit, 10)
+    const nextCursor = conversations.length > limit
       ? conversations[conversations.length - 1].id.toString()
       : null;
 
-    const result = conversations.slice(0, parseInt(limit, 10)).map(conversation => ({
+    const result = conversations.slice(0, limit).map(conversation => ({
       id: conversation.id,
       isGroup: conversation.isGroup,
       groupName: conversation.groupName,
@@ -143,9 +153,10 @@ export async function getConversationMessages(req: Request, res: Response) {
     }
 
     const { conversationId } = req.params as { conversationId: string };
+    const conversationIdNum = parseInt(conversationId, 10);
 
     const conversation = await prisma.conversation.findUnique({
-      where: { id: parseInt(conversationId, 10) },
+      where: { id: conversationIdNum },
       include: {
         participants: true,
       },
@@ -155,25 +166,27 @@ export async function getConversationMessages(req: Request, res: Response) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const { cursor, limit = 30 } = req.query as { cursor?: string; limit?: string };
+    const { cursor, limit: limitQuery } = req.query as { cursor?: string; limit?: string };
+    const limit = parseInt(limitQuery ?? '30', 10);
 
     const messages = await prisma.message.findMany({
       where: {
-        conversationId: parseInt(conversationId, 10),
+        conversationId: conversationIdNum,
       },
       include: {
         sender: true,
       },
       cursor: cursor ? { id: parseInt(cursor, 10) } : undefined,
-      take: parseInt(limit, 10) + 1,
+      skip: cursor ? 1 : 0,
+      take: limit + 1,
       orderBy: { createdAt: 'desc' },
     });
 
-    const nextCursor = messages.length > parseInt(limit, 10)
+    const nextCursor = messages.length > limit
       ? messages[messages.length - 1].id.toString()
       : null;
 
-    const result = messages.slice(0, parseInt(limit, 10)).map(message => ({
+    const result = messages.slice(0, limit).map(message => ({
       id: message.id,
       content: message.content,
       senderId: message.senderId,
