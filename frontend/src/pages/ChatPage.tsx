@@ -12,6 +12,10 @@ export default function ChatPage() {
   const addMessage = useChatStore((state) => state.addMessage);
   const setUserTyping = useChatStore((state) => state.setUserTyping);
   const updateConversationLastMessage = useChatStore((state) => state.updateConversationLastMessage);
+  const updateMessage = useChatStore((state) => state.updateMessage);
+  const removeMessageContent = useChatStore((state) => state.removeMessageContent);
+  const addReaction = useChatStore((state) => state.addReaction);
+  const removeReaction = useChatStore((state) => state.removeReaction);
   const socket = useSocket();
 
   useEffect(() => {
@@ -30,14 +34,47 @@ export default function ChatPage() {
       setUserTyping(data.conversationId, data.userId, data.isTyping);
     };
 
+    const handleMessageUpdated = (message: Message) => {
+      updateMessage(message.conversationId, message.id, message);
+    };
+
+    const handleMessageDeleted = (data: { messageId: number; conversationId: number }) => {
+      removeMessageContent(data.conversationId, data.messageId);
+    };
+
+    const handleReactionAdded = (data: { messageId: number; conversationId: number; userId: number; emoji: string }) => {
+      addReaction(data.conversationId, data.messageId, data.userId, data.emoji);
+    };
+
+    const handleReactionRemoved = (data: { messageId: number; conversationId: number; userId: number; emoji: string }) => {
+      removeReaction(data.conversationId, data.messageId, data.userId, data.emoji);
+    };
+
     socket.on('message:new', handleNewMessage);
     socket.on('typing:update', handleTypingUpdate);
+    socket.on('message:updated', handleMessageUpdated);
+    socket.on('message:deleted', handleMessageDeleted);
+    socket.on('reaction:added', handleReactionAdded);
+    socket.on('reaction:removed', handleReactionRemoved);
 
     return () => {
       socket.off('message:new', handleNewMessage);
       socket.off('typing:update', handleTypingUpdate);
+      socket.off('message:updated', handleMessageUpdated);
+      socket.off('message:deleted', handleMessageDeleted);
+      socket.off('reaction:added', handleReactionAdded);
+      socket.off('reaction:removed', handleReactionRemoved);
     };
-  }, [socket, addMessage, updateConversationLastMessage, setUserTyping]);
+  }, [
+    socket,
+    addMessage,
+    updateConversationLastMessage,
+    setUserTyping,
+    updateMessage,
+    removeMessageContent,
+    addReaction,
+    removeReaction,
+  ]);
 
   const activeId = conversationId ? parseInt(conversationId, 10) : null;
 

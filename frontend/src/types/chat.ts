@@ -22,6 +22,17 @@ export interface Conversation {
   lastMessage: LastMessagePreview | null;
 }
 
+export interface ReplyPreview {
+  id: number;
+  content: string | null;
+  senderName: string;
+}
+
+export interface Reaction {
+  userId: number;
+  emoji: string;
+}
+
 export interface Message {
   id: number;
   conversationId: number;
@@ -31,4 +42,9 @@ export interface Message {
   content: string | null;
   messageType: string;
   createdAt: string;
+  replyToMessageId: number | null;
+  replyToMessage?: ReplyPreview | null;
+  isEdited: boolean;
+  isDeletedForEveryone: boolean;
+  reactions?: Reaction[];
 }

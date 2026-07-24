@@ -4,6 +4,16 @@ import * as z from 'zod';
 
 const prisma = new PrismaClient();
 
+const userSelect = {
+  id: true,
+  name: true,
+  phoneNumber: true,
+  avatarUrl: true,
+  isOnline: true,
+  lastSeenAt: true,
+  statusMessage: true,
+};
+
 const createConversationSchema = z.object({
   participantUserIds: z.array(z.number()),
   isGroup: z.boolean().optional(),
@@ -40,7 +50,16 @@ export async function createConversation(req: Request, res: Response) {
         },
         include: {
           participants: {
-            include: { user: true },
+            select: {
+              id: true,
+              conversationId: true,
+              userId: true,
+              role: true,
+              joinedAt: true,
+              isMuted: true,
+              isArchived: true,
+              user: { select: userSelect },
+            },
           },
         },
       });
@@ -68,7 +87,16 @@ export async function createConversation(req: Request, res: Response) {
       },
       include: {
         participants: {
-          include: { user: true },
+          select: {
+            id: true,
+            conversationId: true,
+            userId: true,
+            role: true,
+            joinedAt: true,
+            isMuted: true,
+            isArchived: true,
+            user: { select: userSelect },
+          },
         },
       },
     });
@@ -101,7 +129,16 @@ export async function listConversations(req: Request, res: Response) {
       },
       include: {
         participants: {
-          include: { user: true },
+          select: {
+            id: true,
+            conversationId: true,
+            userId: true,
+            role: true,
+            joinedAt: true,
+            isMuted: true,
+            isArchived: true,
+            user: { select: userSelect },
+          },
         },
         messages: {
           orderBy: { createdAt: 'desc' },
@@ -174,7 +211,17 @@ export async function getConversationMessages(req: Request, res: Response) {
         conversationId: conversationIdNum,
       },
       include: {
-        sender: true,
+        sender: { select: userSelect },
+        replyToMessage: {
+          select: {
+            id: true,
+            content: true,
+            sender: { select: { name: true } },
+          },
+        },
+        reactions: {
+          select: { userId: true, emoji: true },
+        },
       },
       cursor: cursor ? { id: parseInt(cursor, 10) } : undefined,
       skip: cursor ? 1 : 0,
@@ -188,10 +235,23 @@ export async function getConversationMessages(req: Request, res: Response) {
 
     const result = messages.slice(0, limit).map(message => ({
       id: message.id,
+      conversationId: message.conversationId,
       content: message.content,
+      messageType: message.messageType,
       senderId: message.senderId,
       senderName: message.sender.name,
       senderAvatarUrl: message.sender.avatarUrl,
+      replyToMessageId: message.replyToMessageId,
+      replyToMessage: message.replyToMessage
+        ? {
+            id: message.replyToMessage.id,
+            content: message.replyToMessage.content,
+            senderName: message.replyToMessage.sender.name,
+          }
+        : null,
+      isEdited: message.isEdited,
+      isDeletedForEveryone: message.isDeletedForEveryone,
+      reactions: message.reactions,
       createdAt: message.createdAt,
     }));
 

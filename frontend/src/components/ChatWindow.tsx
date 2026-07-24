@@ -7,6 +7,7 @@ import type { Message, Conversation } from '../types/chat';
 
 const EMPTY_MESSAGES: Message[] = [];
 const EMPTY_TYPING: number[] = [];
+const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢'];
 
 function getConversationName(conversation: Conversation | undefined, currentUserId: number | undefined) {
   if (!conversation) return '';
@@ -25,6 +26,11 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
   const typingUsers = useChatStore((state) => state.typingUsers[conversationId] ?? EMPTY_TYPING);
 
   const [input, setInput] = useState('');
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
+  const [reactionPickerFor, setReactionPickerFor] = useState<number | null>(null);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -48,7 +54,12 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
 
     socket.emit(
       'message:send',
-      { conversationId, content, messageType: 'TEXT', replyToMessageId: null },
+      {
+        conversationId,
+        content,
+        messageType: 'TEXT',
+        replyToMessageId: replyingTo?.id ?? null,
+      },
       (response: { message?: Message; error?: string }) => {
         if (response?.message) {
           addMessage(conversationId, response.message);
@@ -59,6 +70,7 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
     socket.emit('typing:stop', { conversationId });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     setInput('');
+    setReplyingTo(null);
   };
 
   const handleInputChange = (value: string) => {
@@ -71,6 +83,50 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('typing:stop', { conversationId });
     }, 2000);
+  };
+
+  const startEdit = (message: Message) => {
+    setEditingId(message.id);
+    setEditText(message.content || '');
+  };
+
+  const confirmEdit = (messageId: number) => {
+    if (!socket || !editText.trim()) return;
+    socket.emit('message:edit', { messageId, content: editText.trim() }, (response: { error?: string }) => {
+      if (!response?.error) {
+        setEditingId(null);
+        setEditText('');
+      }
+    });
+  };
+
+  const handleDelete = (messageId: number) => {
+    if (!socket) return;
+    const confirmed = window.confirm('Delete this message for everyone?');
+    if (!confirmed) return;
+    socket.emit('message:delete', { messageId, forEveryone: true });
+  };
+
+  const handleReactionClick = (message: Message, emoji: string) => {
+    if (!socket) return;
+    const alreadyReacted = message.reactions?.some(
+      (r) => r.userId === currentUser?.id && r.emoji === emoji
+    );
+    if (alreadyReacted) {
+      socket.emit('reaction:remove', { messageId: message.id, emoji });
+    } else {
+      socket.emit('reaction:add', { messageId: message.id, emoji });
+    }
+    setReactionPickerFor(null);
+  };
+
+  const groupedReactions = (message: Message) => {
+    const reactions = message.reactions || [];
+    const counts: Record<string, number> = {};
+    reactions.forEach((r) => {
+      counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+    });
+    return counts;
   };
 
   return (
@@ -92,28 +148,159 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
         {messages.map((message) => {
           const isOwn = message.senderId === currentUser?.id;
-          return (
-            <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-xs px-4 py-2 rounded-2xl text-sm ${
-                  isOwn
-                    ? 'bg-emerald-600 text-white rounded-br-sm'
-                    : 'bg-white/10 text-gray-100 rounded-bl-sm'
-                }`}
-              >
-                <p>{message.content}</p>
-                <p className={`text-[10px] mt-1 ${isOwn ? 'text-emerald-100/70' : 'text-gray-400'}`}>
-                  {new Date(message.createdAt).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
+          const isEditing = editingId === message.id;
+          const reactionCounts = groupedReactions(message);
+
+          if (message.isDeletedForEveryone) {
+            return (
+              <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                <div className="max-w-xs px-4 py-2 rounded-2xl text-sm bg-white/5 text-gray-500 italic">
+                  This message was deleted
+                </div>
               </div>
+            );
+          }
+
+          return (
+            <div key={message.id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} group`}>
+              <div className={`flex items-start gap-1 ${isOwn ? 'flex-row-reverse' : ''}`}>
+                <div
+                  className={`max-w-xs px-4 py-2 rounded-2xl text-sm relative ${
+                    isOwn
+                      ? 'bg-emerald-600 text-white rounded-br-sm'
+                      : 'bg-white/10 text-gray-100 rounded-bl-sm'
+                  }`}
+                >
+                  {message.replyToMessage && (
+                    <div className="mb-1 px-2 py-1 rounded bg-black/20 border-l-2 border-emerald-300 text-xs opacity-80">
+                      <p className="font-medium">{message.replyToMessage.senderName}</p>
+                      <p className="truncate">{message.replyToMessage.content}</p>
+                    </div>
+                  )}
+
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') confirmEdit(message.id);
+                        }}
+                        className="bg-black/30 text-white text-sm rounded px-2 py-1 flex-1 focus:outline-none"
+                        autoFocus
+                      />
+                      <button onClick={() => confirmEdit(message.id)} className="text-white">
+                        ✓
+                      </button>
+                    </div>
+                  ) : (
+                    <p>{message.content}</p>
+                  )}
+
+                  <p className={`text-[10px] mt-1 ${isOwn ? 'text-emerald-100/70' : 'text-gray-400'}`}>
+                    {new Date(message.createdAt).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                    {message.isEdited && ' · edited'}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center text-gray-400">
+                  <button
+                    onClick={() => setReplyingTo(message)}
+                    title="Reply"
+                    className="hover:text-emerald-400 text-xs"
+                  >
+                    ↩
+                  </button>
+                  <button
+                    onClick={() =>
+                      setReactionPickerFor(reactionPickerFor === message.id ? null : message.id)
+                    }
+                    title="React"
+                    className="hover:text-emerald-400 text-xs"
+                  >
+                    +
+                  </button>
+                  {isOwn && (
+                    <>
+                      <button
+                        onClick={() => startEdit(message)}
+                        title="Edit"
+                        className="hover:text-emerald-400 text-xs"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        onClick={() => handleDelete(message.id)}
+                        title="Delete"
+                        className="hover:text-red-400 text-xs"
+                      >
+                        🗑
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {reactionPickerFor === message.id && (
+                <div className="flex gap-1 mt-1 bg-white/10 rounded-full px-2 py-1">
+                  {REACTION_OPTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => handleReactionClick(message, emoji)}
+                      className="hover:scale-125 transition-transform text-sm"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {Object.keys(reactionCounts).length > 0 && (
+                <div className="flex gap-1 mt-1">
+                  {Object.entries(reactionCounts).map(([emoji, count]) => {
+                    const reacted = message.reactions?.some(
+                      (r) => r.userId === currentUser?.id && r.emoji === emoji
+                    );
+                    return (
+                      <button
+                        key={emoji}
+                        onClick={() => handleReactionClick(message, emoji)}
+                        className={`text-xs rounded-full px-2 py-0.5 flex items-center gap-1 ${
+                          reacted ? 'bg-emerald-600/30 border border-emerald-500' : 'bg-white/10'
+                        }`}
+                      >
+                        <span>{emoji}</span>
+                        <span className="text-gray-300">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
         <div ref={bottomRef} />
       </div>
+
+      {replyingTo && (
+        <div className="px-6 pt-2">
+          <div className="flex items-center justify-between bg-white/5 border-l-2 border-emerald-500 rounded px-3 py-2 text-sm">
+            <div>
+              <p className="text-emerald-400 font-medium text-xs">
+                Replying to {replyingTo.senderId === currentUser?.id ? 'yourself' : replyingTo.senderName}
+              </p>
+              <p className="text-gray-400 truncate">{replyingTo.content}</p>
+            </div>
+            <button onClick={() => setReplyingTo(null)} className="text-gray-500 hover:text-white ml-3">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="px-6 py-4 border-t border-white/10 flex items-center gap-3">
         <input

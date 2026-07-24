@@ -14,9 +14,13 @@ interface ChatState {
   addMessage: (conversationId: number, message: Message) => void;
   setUserTyping: (conversationId: number, userId: number, isTyping: boolean) => void;
   updateConversationLastMessage: (conversationId: number, message: Message) => void;
+  updateMessage: (conversationId: number, messageId: number, updates: Partial<Message>) => void;
+  removeMessageContent: (conversationId: number, messageId: number) => void;
+  addReaction: (conversationId: number, messageId: number, userId: number, emoji: string) => void;
+  removeReaction: (conversationId: number, messageId: number, userId: number, emoji: string) => void;
 }
 
-export const useChatStore = create<ChatState>((set, get) => ({
+export const useChatStore = create<ChatState>((set) => ({
   conversations: [],
   activeConversationId: null,
   messages: {},
@@ -74,4 +78,65 @@ export const useChatStore = create<ChatState>((set, get) => ({
           : c
       ),
     })),
+
+  updateMessage: (conversationId, messageId, updates) =>
+    set((state) => {
+      const existing = state.messages[conversationId] || [];
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: existing.map((m) =>
+            m.id === messageId ? { ...m, ...updates } : m
+          ),
+        },
+      };
+    }),
+
+  removeMessageContent: (conversationId, messageId) =>
+    set((state) => {
+      const existing = state.messages[conversationId] || [];
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: existing.map((m) =>
+            m.id === messageId
+              ? { ...m, isDeletedForEveryone: true, content: null }
+              : m
+          ),
+        },
+      };
+    }),
+
+  addReaction: (conversationId, messageId, userId, emoji) =>
+    set((state) => {
+      const existing = state.messages[conversationId] || [];
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: existing.map((m) => {
+            if (m.id !== messageId) return m;
+            const reactions = m.reactions || [];
+            if (reactions.some((r) => r.userId === userId && r.emoji === emoji)) return m;
+            return { ...m, reactions: [...reactions, { userId, emoji }] };
+          }),
+        },
+      };
+    }),
+
+  removeReaction: (conversationId, messageId, userId, emoji) =>
+    set((state) => {
+      const existing = state.messages[conversationId] || [];
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: existing.map((m) => {
+            if (m.id !== messageId) return m;
+            const reactions = (m.reactions || []).filter(
+              (r) => !(r.userId === userId && r.emoji === emoji)
+            );
+            return { ...m, reactions };
+          }),
+        },
+      };
+    }),
 }));

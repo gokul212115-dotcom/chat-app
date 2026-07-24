@@ -3,6 +3,16 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const userSelect = {
+  id: true,
+  name: true,
+  phoneNumber: true,
+  avatarUrl: true,
+  isOnline: true,
+  lastSeenAt: true,
+  statusMessage: true,
+};
+
 async function initializeConnection(io: Server, socket: Socket, userId: number) {
   try {
     await prisma.user.update({
@@ -33,7 +43,6 @@ export const registerSocketHandlers = (io: Server) => {
   io.on('connection', (socket: Socket) => {
     const userId = socket.data.userId as number;
 
-    // Register listeners synchronously FIRST, so no early events are dropped
     socket.on('message:send', async (data, callback) => {
       try {
         const { conversationId, content, messageType, replyToMessageId } = data;
@@ -56,13 +65,42 @@ export const registerSocketHandlers = (io: Server) => {
             conversationId,
           },
           include: {
-            sender: true,
+            sender: { select: userSelect },
+            replyToMessage: {
+              select: {
+                id: true,
+                content: true,
+                sender: { select: { name: true } },
+              },
+            },
           },
         });
 
-        io.to(`conversation:${conversationId}`).emit('message:new', message);
+        const payload = {
+          id: message.id,
+          conversationId: message.conversationId,
+          content: message.content,
+          messageType: message.messageType,
+          senderId: message.senderId,
+          senderName: message.sender.name,
+          senderAvatarUrl: message.sender.avatarUrl,
+          replyToMessageId: message.replyToMessageId,
+          replyToMessage: message.replyToMessage
+            ? {
+                id: message.replyToMessage.id,
+                content: message.replyToMessage.content,
+                senderName: message.replyToMessage.sender.name,
+              }
+            : null,
+          isEdited: message.isEdited,
+          isDeletedForEveryone: message.isDeletedForEveryone,
+          reactions: [] as Array<{ userId: number; emoji: string }>,
+          createdAt: message.createdAt,
+        };
 
-        if (callback) callback({ message });
+        io.to(`conversation:${conversationId}`).emit('message:new', payload);
+
+        if (callback) callback({ message: payload });
       } catch (error) {
         console.error(error);
         socket.emit('error', { message: 'Failed to send message' });
@@ -143,6 +181,158 @@ export const registerSocketHandlers = (io: Server) => {
       }
     });
 
+    socket.on('message:edit', async (data, callback) => {
+      try {
+        const { messageId, content } = data;
+
+        const message = await prisma.message.findUnique({ where: { id: messageId } });
+        if (!message) {
+          if (callback) callback({ error: 'Message not found' });
+          return;
+        }
+
+        if (message.senderId !== userId) {
+          if (callback) callback({ error: 'Not authorized to edit this message' });
+          return;
+        }
+
+        const updated = await prisma.message.update({
+          where: { id: messageId },
+          data: { content, isEdited: true },
+          include: {
+            sender: { select: userSelect },
+          },
+        });
+
+        const payload = {
+          id: updated.id,
+          conversationId: updated.conversationId,
+          content: updated.content,
+          messageType: updated.messageType,
+          senderId: updated.senderId,
+          senderName: updated.sender.name,
+          senderAvatarUrl: updated.sender.avatarUrl,
+          replyToMessageId: updated.replyToMessageId,
+          isEdited: updated.isEdited,
+          isDeletedForEveryone: updated.isDeletedForEveryone,
+          createdAt: updated.createdAt,
+        };
+
+        io.to(`conversation:${message.conversationId}`).emit('message:updated', payload);
+
+        if (callback) callback({ message: payload });
+      } catch (error) {
+        console.error(error);
+        socket.emit('error', { message: 'Failed to edit message' });
+      }
+    });
+
+    socket.on('message:delete', async (data, callback) => {
+      try {
+        const { messageId, forEveryone } = data;
+
+        const message = await prisma.message.findUnique({ where: { id: messageId } });
+        if (!message) {
+          if (callback) callback({ error: 'Message not found' });
+          return;
+        }
+
+        if (message.senderId !== userId) {
+          if (callback) callback({ error: 'Not authorized to delete this message' });
+          return;
+        }
+
+        if (!forEveryone) {
+          if (callback) callback({ error: 'Delete for me is not supported yet' });
+          return;
+        }
+
+        await prisma.message.update({
+          where: { id: messageId },
+          data: { isDeletedForEveryone: true, content: null },
+        });
+
+        io.to(`conversation:${message.conversationId}`).emit('message:deleted', {
+          messageId,
+          conversationId: message.conversationId,
+        });
+
+        if (callback) callback({ success: true });
+      } catch (error) {
+        console.error(error);
+        socket.emit('error', { message: 'Failed to delete message' });
+      }
+    });
+
+    socket.on('reaction:add', async (data, callback) => {
+      try {
+        const { messageId, emoji } = data;
+
+        const message = await prisma.message.findUnique({ where: { id: messageId } });
+        if (!message) {
+          if (callback) callback({ error: 'Message not found' });
+          return;
+        }
+
+        const isParticipant = await prisma.conversationParticipant.findFirst({
+          where: { conversationId: message.conversationId, userId },
+        });
+
+        if (!isParticipant) {
+          if (callback) callback({ error: 'Not authorized' });
+          return;
+        }
+
+        await prisma.messageReaction.upsert({
+          where: {
+            messageId_userId_emoji: { messageId, userId, emoji },
+          },
+          create: { messageId, userId, emoji },
+          update: {},
+        });
+
+        io.to(`conversation:${message.conversationId}`).emit('reaction:added', {
+          messageId,
+          conversationId: message.conversationId,
+          userId,
+          emoji,
+        });
+
+        if (callback) callback({ success: true });
+      } catch (error) {
+        console.error(error);
+        socket.emit('error', { message: 'Failed to add reaction' });
+      }
+    });
+
+    socket.on('reaction:remove', async (data, callback) => {
+      try {
+        const { messageId, emoji } = data;
+
+        const message = await prisma.message.findUnique({ where: { id: messageId } });
+        if (!message) {
+          if (callback) callback({ error: 'Message not found' });
+          return;
+        }
+
+        await prisma.messageReaction.deleteMany({
+          where: { messageId, userId, emoji },
+        });
+
+        io.to(`conversation:${message.conversationId}`).emit('reaction:removed', {
+          messageId,
+          conversationId: message.conversationId,
+          userId,
+          emoji,
+        });
+
+        if (callback) callback({ success: true });
+      } catch (error) {
+        console.error(error);
+        socket.emit('error', { message: 'Failed to remove reaction' });
+      }
+    });
+
     socket.on('disconnect', async () => {
       try {
         const now = new Date();
@@ -171,7 +361,6 @@ export const registerSocketHandlers = (io: Server) => {
       }
     });
 
-    // Now do the async initialization (marking online, joining rooms)
     initializeConnection(io, socket, userId);
   });
 };
