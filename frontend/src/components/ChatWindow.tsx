@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useSocket } from '../hooks/useSocket';
+import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import type { Message, Conversation } from '../types/chat';
 
 const EMPTY_MESSAGES: Message[] = [];
@@ -129,6 +130,41 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
     return counts;
   };
 
+  const { isRecording, recordingSeconds, startRecording, stopRecording, audioBlob, error } = useAudioRecorder();
+
+  const handleRecordClick = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  useEffect(() => {
+    if (!audioBlob) return;
+
+    uploadFile(audioBlob).then((response) => {
+      socket.emit(
+        'message:send',
+        {
+          conversationId,
+          content: response.url,
+          messageType: 'AUDIO',
+          replyToMessageId: replyingTo?.id ?? null,
+        },
+        (response: { message?: Message; error?: string }) => {
+          if (response?.message) {
+            addMessage(conversationId, response.message);
+          }
+        }
+      );
+    }).catch((err) => {
+      console.error('Error uploading audio:', err);
+    });
+
+    setAudioBlob(null);
+  }, [audioBlob, conversationId, replyingTo, socket]);
+
   return (
     <div className="flex-1 h-screen flex flex-col bg-black">
       <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
@@ -194,6 +230,8 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
                         ✓
                       </button>
                     </div>
+                  ) : message.messageType === 'AUDIO' ? (
+                    <audio controls src={message.content} className="rounded" />
                   ) : (
                     <p>{message.content}</p>
                   )}
@@ -226,13 +264,15 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
                   </button>
                   {isOwn && (
                     <>
-                      <button
-                        onClick={() => startEdit(message)}
-                        title="Edit"
-                        className="hover:text-emerald-400 text-xs"
-                      >
-                        ✎
-                      </button>
+                      {message.messageType === 'TEXT' && (
+                        <button
+                          onClick={() => startEdit(message)}
+                          title="Edit"
+                          className="hover:text-emerald-400 text-xs"
+                        >
+                          ✎
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(message.id)}
                         title="Delete"
@@ -303,6 +343,24 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
       )}
 
       <div className="px-6 py-4 border-t border-white/10 flex items-center gap-3">
+        {isRecording && (
+          <span className="text-gray-500 mr-2">
+            Recording: {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+          </span>
+        )}
+        {error && <span className="text-red-500 mr-2">{error}</span>}
+        <button
+          onClick={handleRecordClick}
+          className={`bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-2 rounded-full text-sm ${
+            isRecording ? 'bg-red-500 hover:bg-red-400' : ''
+          }`}
+        >
+          {isRecording ? 'Stop' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+            <path d="M15.975 8.475a.75.75 0 010 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.21 10.53a.75.75 0 010-1.06l3.75-3.75a.75.75 0 011.06 0z" />
+            <path d="M18.254 4.93a.75.75 0 010 1.06l-3.75 3.75a.75.75 0 01-1.06 0L8.48 8.48a.75.75 0 010-1.06l3.75-3.75a.75.75 0 011.06 0z" />
+            <path d="M21.75 9c0-.414-.336-.75-.75-.75H8.25A.75.75 0 007.5 9v6a.75.75 0 00.75.75h13.5a.75.75 0 00.75-.75V9z" />
+          </svg>}
+        </button>
         <input
           type="text"
           value={input}

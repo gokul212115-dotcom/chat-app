@@ -85,3 +85,15 @@ export async function findUserByPhone(phoneNumber: string): Promise<UserSearchRe
     return null;
   }
 }
+
+export async function uploadFile(file: File | Blob, filename?: string): Promise<{ url: string; mimeType: string; sizeBytes: number }> {
+  const formData = new FormData();
+  formData.append('file', file, filename);
+
+  try {
+    const response = await api.post('/upload', formData);
+    return response.data;
+  } catch (error) {
+    throw new Error('File upload failed');
+  }
+}
