@@ -355,10 +355,9 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
             isRecording ? 'bg-red-500 hover:bg-red-400' : ''
           }`}
         >
-          {isRecording ? 'Stop' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-            <path d="M15.975 8.475a.75.75 0 010 1.06l-3.75 3.75a.75.75 0 01-1.06 0L7.21 10.53a.75.75 0 010-1.06l3.75-3.75a.75.75 0 011.06 0z" />
-            <path d="M18.254 4.93a.75.75 0 010 1.06l-3.75 3.75a.75.75 0 01-1.06 0L8.48 8.48a.75.75 0 010-1.06l3.75-3.75a.75.75 0 011.06 0z" />
-            <path d="M21.75 9c0-.414-.336-.75-.75-.75H8.25A.75.75 0 007.5 9v6a.75.75 0 00.75.75h13.5a.75.75 0 00.75-.75V9z" />
+          {isRecording ? 'Stop' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+            <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
           </svg>}
         </button>
         <input
