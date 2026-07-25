@@ -4,6 +4,7 @@ import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useSocket } from '../hooks/useSocket';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import useCamera, { CameraModal } from '../hooks/useCamera';
 import type { Message, Conversation } from '../types/chat';
 
 const EMPTY_MESSAGES: Message[] = [];
@@ -31,6 +32,8 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
   const [reactionPickerFor, setReactionPickerFor] = useState<number | null>(null);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,8 +168,77 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
     setAudioBlob(null);
   }, [audioBlob, conversationId, replyingTo, socket]);
 
+  const { videoRef, startCamera, stopCamera, capturePhoto } = useCamera();
+
+  const handleCaptureClick = () => {
+    setIsCameraModalOpen(true);
+    startCamera();
+  };
+
+  const handleSendPhoto = (blob: Blob) => {
+    uploadFile(blob, 'photo.jpg').then((response) => {
+      socket.emit(
+        'message:send',
+        {
+          conversationId,
+          content: response.url,
+          messageType: 'IMAGE',
+          replyToMessageId: replyingTo?.id ?? null,
+        },
+        (response: { message?: Message; error?: string }) => {
+          if (response?.message) {
+            addMessage(conversationId, response.message);
+          }
+        }
+      );
+    }).catch((err) => {
+      console.error('Error uploading photo:', err);
+    });
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    if (!validTypes.includes(file.type)) {
+      alert('Invalid file type. Please upload a PDF, DOC, DOCX, or TXT file.');
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      alert('File size too large. Maximum allowed size is 25MB.');
+      return;
+    }
+
+    setIsUploadingFile(true);
+    uploadFile(file, file.name).then((response) => {
+      socket.emit(
+        'message:send',
+        {
+          conversationId,
+          content: response.url,
+          messageType: 'DOCUMENT',
+          replyToMessageId: replyingTo?.id ?? null,
+        },
+        (response: { message?: Message; error?: string }) => {
+          if (response?.message) {
+            addMessage(conversationId, response.message);
+          }
+        }
+      );
+    }).catch((err) => {
+      console.error('Error uploading file:', err);
+    }).finally(() => {
+      setIsUploadingFile(false);
+    });
+  };
+
   return (
     <div className="flex-1 h-screen flex flex-col bg-black">
+      {isCameraModalOpen && (
+        <CameraModal onClose={() => { stopCamera(); setIsCameraModalOpen(false); }} onSend={handleSendPhoto} />
+      )}
       <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold">
           {getConversationName(conversation, currentUser?.id).charAt(0).toUpperCase()}
@@ -232,6 +304,16 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
                     </div>
                   ) : message.messageType === 'AUDIO' ? (
                     <audio controls src={message.content} className="rounded" />
+                  ) : message.messageType === 'IMAGE' ? (
+                    <img src={message.content} className="rounded-lg max-w-xs cursor-pointer" onClick={() => window.open(message.content, '_blank')} />
+                  ) : message.messageType === 'DOCUMENT' ? (
+                    <a href={message.content} target="_blank" rel="noopener noreferrer" download className="flex items-center gap-2 bg-white/10 rounded px-3 py-2 text-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                        <path d="M14.6 7l-.8-3.6L9 5.2l3.6.8zm-1.5 9H6v-2h5.9c.8 0 1.5.7 1.5 1.5s-.7 1.5-1.5 1.5z" />
+                        <path d="M19 4h-3.5c0-.8-.7-1.5-1.5-1.5S12 2.7 12 3.5v.6H8.5C7.7 4 7 4.7 7 5.5s.7 1.5 1.5 1.5H9v10c0 .3-.2.5-.5.5s-.5-.2-.5-.5V6h5v9c0 .3.2.5.5.5s.5-.2.5-.5v-10h1.5c.8 0 1.5.7 1.5 1.5S20.8 4 20 4z" />
+                      </svg>
+                      <span>{message.content.split('/').pop()}</span>
+                    </a>
                   ) : (
                     <p>{message.content}</p>
                   )}
@@ -358,6 +440,33 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
           {isRecording ? 'Stop' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
             <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
             <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
+          </svg>}
+        </button>
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx,.txt"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        {isUploadingFile && (
+          <span className="text-gray-500 mr-2">Uploading...</span>
+        )}
+        <button
+          onClick={() => document.querySelector('input[type="file"]')?.click()}
+          className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-2 rounded-full text-sm"
+        >
+          {isUploadingFile ? 'Uploading...' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <path d="M14.6 7l-.8-3.6L9 5.2l3.6.8zm-1.5 9H6v-2h5.9c.8 0 1.5.7 1.5 1.5s-.7 1.5-1.5 1.5z" />
+            <path d="M19 4h-3.5c0-.8-.7-1.5-1.5-1.5S12 2.7 12 3.5v.6H8.5C7.7 4 7 4.7 7 5.5s.7 1.5 1.5 1.5H9v10c0 .3-.2.5-.5.5s-.5-.2-.5-.5V6h5v9c0 .3.2.5.5.5s.5-.2.5-.5v-10h1.5c.8 0 1.5.7 1.5 1.5S20.8 4 20 4z" />
+          </svg>}
+        </button>
+        <button
+          onClick={handleCaptureClick}
+          className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-2 rounded-full text-sm"
+        >
+          {<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <path d="M17 10.5V7c0-.55-.45-1-1-1H8c-.55 0-1 .45-1 1v3.5l4 2.5L17 10.5zm-6 0h6v-3.5c0-.83-.67-1.5-1.5-1.5S9 6.67 9 7.5V10.5z" />
+            <path d="M21 4H3c-1.1 0-2 .9-2 2v14a2 2 0 002 2h18a2 2 0 002-2V6c0-1.1-.9-2-2-2zm0 16H3V6h18v14z" />
           </svg>}
         </button>
         <input
