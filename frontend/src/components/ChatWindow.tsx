@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { api } from '../lib/api';
+import { api, uploadFile, getMediaUrl } from '../lib/api';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useSocket } from '../hooks/useSocket';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
-import useCamera, { CameraModal } from '../hooks/useCamera';
+import { useCamera } from '../hooks/useCamera';
+import CameraModal from '../components/CameraModal';
 import type { Message, Conversation } from '../types/chat';
 
 const EMPTY_MESSAGES: Message[] = [];
@@ -196,6 +197,39 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
     });
   };
 
+  const handleGallerySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      alert('File size too large. Maximum allowed size is 25MB.');
+      return;
+    }
+    uploadFile(file, file.name).then((response) => {
+      socket.emit(
+        'message:send',
+        {
+          conversationId,
+          content: response.url,
+          messageType: 'IMAGE',
+          replyToMessageId: replyingTo?.id ?? null,
+        },
+        (cb: { message?: Message; error?: string }) => {
+          if (cb?.message) {
+            addMessage(conversationId, cb.message);
+          }
+        }
+      );
+      setReplyingTo(null);
+    }).catch((err) => {
+      console.error('Error uploading gallery image:', err);
+    });
+    event.target.value = '';
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -303,11 +337,11 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
                       </button>
                     </div>
                   ) : message.messageType === 'AUDIO' ? (
-                    <audio controls src={message.content} className="rounded" />
+                    <audio controls src={getMediaUrl(message.content)} className="rounded" />
                   ) : message.messageType === 'IMAGE' ? (
-                    <img src={message.content} className="rounded-lg max-w-xs cursor-pointer" onClick={() => window.open(message.content, '_blank')} />
+                    <img src={getMediaUrl(message.content)} className="rounded-lg max-w-xs cursor-pointer" onClick={() => window.open(getMediaUrl(message.content), '_blank')} />
                   ) : message.messageType === 'DOCUMENT' ? (
-                    <a href={message.content} target="_blank" rel="noopener noreferrer" download className="flex items-center gap-2 bg-white/10 rounded px-3 py-2 text-sm">
+                    <a href={getMediaUrl(message.content)} target="_blank" rel="noopener noreferrer" download className="flex items-center gap-2 bg-white/10 rounded px-3 py-2 text-sm">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                         <path d="M14.6 7l-.8-3.6L9 5.2l3.6.8zm-1.5 9H6v-2h5.9c.8 0 1.5.7 1.5 1.5s-.7 1.5-1.5 1.5z" />
                         <path d="M19 4h-3.5c0-.8-.7-1.5-1.5-1.5S12 2.7 12 3.5v.6H8.5C7.7 4 7 4.7 7 5.5s.7 1.5 1.5 1.5H9v10c0 .3-.2.5-.5.5s-.5-.2-.5-.5V6h5v9c0 .3.2.5.5.5s.5-.2.5-.5v-10h1.5c.8 0 1.5.7 1.5 1.5S20.8 4 20 4z" />
@@ -455,20 +489,36 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
           onClick={() => document.querySelector('input[type="file"]')?.click()}
           className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-2 rounded-full text-sm"
         >
-          {isUploadingFile ? 'Uploading...' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path d="M14.6 7l-.8-3.6L9 5.2l3.6.8zm-1.5 9H6v-2h5.9c.8 0 1.5.7 1.5 1.5s-.7 1.5-1.5 1.5z" />
-            <path d="M19 4h-3.5c0-.8-.7-1.5-1.5-1.5S12 2.7 12 3.5v.6H8.5C7.7 4 7 4.7 7 5.5s.7 1.5 1.5 1.5H9v10c0 .3-.2.5-.5.5s-.5-.2-.5-.5V6h5v9c0 .3.2.5.5.5s.5-.2.5-.5v-10h1.5c.8 0 1.5.7 1.5 1.5S20.8 4 20 4z" />
+          {isUploadingFile ? 'Uploading...' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <path d="M21.44 11.05l-9.19 9.19a5 5 0 01-7.07-7.07l9.19-9.19a3.5 3.5 0 014.95 4.95l-9.2 9.19a1.5 1.5 0 01-2.12-2.12l8.49-8.48" />
           </svg>}
         </button>
         <button
           onClick={handleCaptureClick}
           className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-2 rounded-full text-sm"
         >
-          {<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path d="M17 10.5V7c0-.55-.45-1-1-1H8c-.55 0-1 .45-1 1v3.5l4 2.5L17 10.5zm-6 0h6v-3.5c0-.83-.67-1.5-1.5-1.5S9 6.67 9 7.5V10.5z" />
-            <path d="M21 4H3c-1.1 0-2 .9-2 2v14a2 2 0 002 2h18a2 2 0 002-2V6c0-1.1-.9-2-2-2zm0 16H3V6h18v14z" />
+          {<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+            <circle cx="12" cy="13" r="4" />
           </svg>}
         </button>
+        <button
+          onClick={() => document.querySelector('input[data-gallery="true"]')?.click()}
+          className="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-3 py-2 rounded-full text-sm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="M21 15l-5-5L5 21" />
+          </svg>
+        </button>
+        <input
+          type="file"
+          accept="image/*"
+          data-gallery="true"
+          onChange={handleGallerySelect}
+          className="hidden"
+        />
         <input
           type="text"
           value={input}

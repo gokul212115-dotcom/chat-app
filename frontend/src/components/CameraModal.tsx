@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import useCamera from '../hooks/useCamera';
+import { useCamera } from '../hooks/useCamera';
 
 interface CameraModalProps {
   onClose: () => void;

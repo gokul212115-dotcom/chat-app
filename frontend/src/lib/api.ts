@@ -97,3 +97,11 @@ export async function uploadFile(file: File | Blob, filename?: string): Promise<
     throw new Error('File upload failed');
   }
 }
+
+const SOCKET_ORIGIN = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+
+export function getMediaUrl(path: string | null): string {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `${SOCKET_ORIGIN}${path}`;
+}
