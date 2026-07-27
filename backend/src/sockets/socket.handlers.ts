@@ -31,6 +31,14 @@ async function initializeConnection(io: Server, socket: Socket, userId: number) 
       socket.join(`conversation:${conversationId}`);
     });
 
+    conversations.forEach(({ conversationId }) => {
+      io.to(`conversation:${conversationId}`).emit('presence:update', {
+        userId,
+        isOnline: true,
+        lastSeenAt: null,
+      });
+    });
+
     console.log(`User ${userId} connected`);
   } catch (error) {
     console.error(error);
