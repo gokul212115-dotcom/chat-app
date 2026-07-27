@@ -6,6 +6,7 @@ interface ChatState {
   activeConversationId: number | null;
   messages: Record<number, Message[]>;
   typingUsers: Record<number, number[]>;
+  unreadCounts: Record<number, number>;
 
   setConversations: (conversations: Conversation[]) => void;
   addConversation: (conversation: Conversation) => void;
@@ -18,6 +19,9 @@ interface ChatState {
   removeMessageContent: (conversationId: number, messageId: number) => void;
   addReaction: (conversationId: number, messageId: number, userId: number, emoji: string) => void;
   removeReaction: (conversationId: number, messageId: number, userId: number, emoji: string) => void;
+  updatePresence: (userId: number, isOnline: boolean, lastSeenAt: string) => void;
+  incrementUnread: (conversationId: number) => void;
+  clearUnread: (conversationId: number) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -25,6 +29,7 @@ export const useChatStore = create<ChatState>((set) => ({
   activeConversationId: null,
   messages: {},
   typingUsers: {},
+  unreadCounts: {},
 
   setConversations: (conversations) => set({ conversations }),
 
@@ -139,4 +144,27 @@ export const useChatStore = create<ChatState>((set) => ({
         },
       };
     }),
+
+  updatePresence: (userId, isOnline, lastSeenAt) =>
+    set((state) => ({
+      conversations: state.conversations.map((c) => ({
+        ...c,
+        participants: c.participants.map((p) =>
+          p.id === userId ? { ...p, isOnline, lastSeenAt } : p
+        ),
+      })),
+    })),
+
+  incrementUnread: (conversationId) =>
+    set((state) => ({
+      unreadCounts: {
+        ...state.unreadCounts,
+        [conversationId]: (state.unreadCounts[conversationId] || 0) + 1,
+      },
+    })),
+
+  clearUnread: (conversationId) =>
+    set((state) => ({
+      unreadCounts: { ...state.unreadCounts, [conversationId]: 0 },
+    })),
 }));

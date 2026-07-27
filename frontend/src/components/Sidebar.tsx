@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api, findUserByPhone } from '../lib/api';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
+import { useSocket } from '../hooks/useSocket';
 import type { Conversation } from '../types/chat';
 
 function getConversationName(conversation: Conversation, currentUserId: number | undefined) {
@@ -36,6 +37,9 @@ export default function Sidebar() {
   const setConversations = useChatStore((state) => state.setConversations);
   const addConversation = useChatStore((state) => state.addConversation);
   const activeConversationId = useChatStore((state) => state.activeConversationId);
+  const unreadCounts = useChatStore((state) => state.unreadCounts);
+  const updatePresence = useChatStore((state) => state.updatePresence);
+  const socket = useSocket();
 
   const [showNewChat, setShowNewChat] = useState(false);
   const [phoneInput, setPhoneInput] = useState('');
@@ -47,6 +51,20 @@ export default function Sidebar() {
       setConversations(response.data.conversations || []);
     });
   }, [setConversations]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handlePresenceUpdate = (data: { userId: number; isOnline: boolean; lastSeenAt: string }) => {
+      updatePresence(data.userId, data.isOnline, data.lastSeenAt);
+    };
+
+    socket.on('presence:update', handlePresenceUpdate);
+
+    return () => {
+      socket.off('presence:update', handlePresenceUpdate);
+    };
+  }, [socket, updatePresence]);
 
   const handleNewChat = async () => {
     setSearchError(null);
@@ -77,12 +95,24 @@ export default function Sidebar() {
     <div className="w-80 h-screen bg-gray-950 border-r border-white/10 flex flex-col">
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <h2 className="text-white font-semibold text-lg">Chats</h2>
-        <button
-          onClick={() => setShowNewChat((v) => !v)}
-          className="text-emerald-400 hover:text-emerald-300 text-sm font-medium"
-        >
-          + New Chat
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowNewChat((v) => !v)}
+            className="text-emerald-400 hover:text-emerald-300 text-sm font-medium"
+          >
+            + New Chat
+          </button>
+          <button
+            onClick={() => navigate('/settings')}
+            className="text-gray-400 hover:text-white"
+            title="Settings"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {showNewChat && (
@@ -117,6 +147,8 @@ export default function Sidebar() {
           const name = getConversationName(conversation, currentUser?.id);
           const letter = getConversationAvatarLetter(conversation, currentUser?.id);
           const isActive = activeConversationId === conversation.id;
+          const otherParticipant = conversation.participants.find((p) => p.id !== currentUser?.id);
+          const unreadCount = unreadCounts[conversation.id] || 0;
 
           return (
             <button
@@ -126,8 +158,11 @@ export default function Sidebar() {
                 isActive ? 'bg-white/10' : ''
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold flex-shrink-0 relative">
                 {letter}
+                {otherParticipant?.isOnline && (
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-950"></span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
@@ -138,9 +173,16 @@ export default function Sidebar() {
                     </span>
                   )}
                 </div>
-                <p className="text-gray-500 text-xs truncate">
-                  {conversation.lastMessage?.content || 'No messages yet'}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-gray-500 text-xs truncate">
+                    {conversation.lastMessage?.content || 'No messages yet'}
+                  </p>
+                  {unreadCount > 0 && (
+                    <span className="ml-2 flex-shrink-0 rounded-full bg-emerald-500 text-black text-xs px-2 py-0.5 font-semibold">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
               </div>
             </button>
           );
