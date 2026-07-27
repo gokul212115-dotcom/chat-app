@@ -19,6 +19,21 @@ function getConversationName(conversation: Conversation | undefined, currentUser
   return other?.name || 'Unknown';
 }
 
+function formatLastSeen(dateString: string | null): string {
+  if (!dateString) return 'offline';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hours ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay} days ago`;
+  return date.toLocaleDateString();
+}
+
 export default function ChatWindow({ conversationId }: { conversationId: number }) {
   const socket = useSocket();
   const currentUser = useAuthStore((state) => state.user);
@@ -281,9 +296,19 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
           <p className="text-white font-medium text-sm">
             {getConversationName(conversation, currentUser?.id)}
           </p>
-          {otherTypingUsers.length > 0 && (
+          {otherTypingUsers.length > 0 ? (
             <p className="text-emerald-400 text-xs">typing...</p>
-          )}
+          ) : conversation && !conversation.isGroup ? (
+            (() => {
+              const otherParticipant = conversation.participants.find((p) => p.id !== currentUser?.id);
+              if (!otherParticipant) return null;
+              return otherParticipant.isOnline ? (
+                <p className="text-emerald-400 text-xs">online</p>
+              ) : (
+                <p className="text-gray-500 text-xs">last seen {formatLastSeen(otherParticipant.lastSeenAt)}</p>
+              );
+            })()
+          ) : null}
         </div>
       </div>
 
