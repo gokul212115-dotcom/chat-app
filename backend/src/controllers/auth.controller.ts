@@ -91,3 +91,44 @@ export async function refreshToken(req: Request, res: Response) {
 export async function logout(_req: Request, res: Response) {
   res.status(200).json({ message: 'Logged out successfully' });
 }
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(6),
+  newPassword: z.string().min(6),
+});
+
+export async function changePassword(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isValid = await comparePassword(currentPassword, user.passwordHash);
+    if (!isValid) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    const newPasswordHash = await hashPassword(newPassword);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    return res.json({ message: 'Password updated successfully' });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
