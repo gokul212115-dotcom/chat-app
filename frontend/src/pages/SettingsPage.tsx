@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, uploadFile, getMediaUrl } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
+import AvatarCropModal from '../components/AvatarCropModal';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ export default function SettingsPage() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
@@ -36,7 +39,7 @@ export default function SettingsPage() {
     setIsUploadingAvatar(true);
     try {
       const uploaded = await uploadFile(file, file.name);
-      const response = await api.patch('/users/me', { avatarUrl: uploaded.url });
+      const response = await api.put('/users/me', { avatarUrl: uploaded.url });
       if (user && accessToken && refreshToken) {
         login({ ...user, avatarUrl: response.data.avatarUrl }, accessToken, refreshToken);
       }
@@ -52,7 +55,7 @@ export default function SettingsPage() {
     setProfileSaving(true);
     setProfileMessage(null);
     try {
-      const response = await api.patch('/users/me', { name, statusMessage });
+      const response = await api.put('/users/me', { name, statusMessage });
       if (user && accessToken && refreshToken) {
         login({ ...user, name: response.data.name, statusMessage: response.data.statusMessage }, accessToken, refreshToken);
       }
@@ -232,6 +235,14 @@ export default function SettingsPage() {
           Log Out
         </button>
       </div>
+
+      {cropImageSrc && (
+        <AvatarCropModal
+          imageSrc={cropImageSrc}
+          onCancel={handleCropCancel}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </div>
   );
 }

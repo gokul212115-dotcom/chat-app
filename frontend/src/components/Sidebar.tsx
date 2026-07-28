@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, findUserByPhone } from '../lib/api';
+import { api, findUserByPhone, getMediaUrl } from '../lib/api';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useSocket } from '../hooks/useSocket';
@@ -158,8 +158,14 @@ export default function Sidebar() {
                 isActive ? 'bg-white/10' : ''
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold flex-shrink-0 relative">
-                {letter}
+              <div className="w-10 h-10 rounded-full flex-shrink-0 relative">
+                <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+                  {otherParticipant?.avatarUrl ? (
+                    <img src={getMediaUrl(otherParticipant.avatarUrl)} className="w-full h-full object-cover" alt={name} />
+                  ) : (
+                    letter
+                  )}
+                </div>
                 {otherParticipant?.isOnline && (
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-950"></span>
                 )}

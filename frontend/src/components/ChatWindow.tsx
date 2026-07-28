@@ -55,6 +55,7 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const conversation = conversations.find((c) => c.id === conversationId);
+  const otherParticipant = conversation?.participants.find((p) => p.id !== currentUser?.id);
   const otherTypingUsers = typingUsers.filter((id) => id !== currentUser?.id);
 
   useEffect(() => {
@@ -289,8 +290,12 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
         <CameraModal onClose={() => { stopCamera(); setIsCameraModalOpen(false); }} onSend={handleSendPhoto} />
       )}
       <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold">
-          {getConversationName(conversation, currentUser?.id).charAt(0).toUpperCase()}
+        <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+          {otherParticipant?.avatarUrl ? (
+            <img src={getMediaUrl(otherParticipant.avatarUrl)} className="w-full h-full object-cover" alt="avatar" />
+          ) : (
+            getConversationName(conversation, currentUser?.id).charAt(0).toUpperCase()
+          )}
         </div>
         <div>
           <p className="text-white font-medium text-sm">
@@ -298,16 +303,12 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
           </p>
           {otherTypingUsers.length > 0 ? (
             <p className="text-emerald-400 text-xs">typing...</p>
-          ) : conversation && !conversation.isGroup ? (
-            (() => {
-              const otherParticipant = conversation.participants.find((p) => p.id !== currentUser?.id);
-              if (!otherParticipant) return null;
-              return otherParticipant.isOnline ? (
-                <p className="text-emerald-400 text-xs">online</p>
-              ) : (
-                <p className="text-gray-500 text-xs">last seen {formatLastSeen(otherParticipant.lastSeenAt)}</p>
-              );
-            })()
+          ) : conversation && !conversation.isGroup && otherParticipant ? (
+            otherParticipant.isOnline ? (
+              <p className="text-emerald-400 text-xs">online</p>
+            ) : (
+              <p className="text-gray-500 text-xs">last seen {formatLastSeen(otherParticipant.lastSeenAt)}</p>
+            )
           ) : null}
         </div>
       </div>
