@@ -98,7 +98,7 @@ export default function Sidebar() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowNewChat((v) => !v)}
-            className="text-emerald-400 hover:text-emerald-300 text-sm font-medium"
+            className="text-theme-primary hover:opacity-80 text-sm font-medium"
           >
             + New Chat
           </button>
@@ -122,7 +122,7 @@ export default function Sidebar() {
             value={phoneInput}
             onChange={(e) => setPhoneInput(e.target.value)}
             placeholder="Enter phone number"
-            className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 text-sm focus:outline-none focus:ring-2 ring-theme-primary"
           />
           {searchError && (
             <p className="text-red-400 text-xs mt-2">{searchError}</p>
@@ -130,7 +130,7 @@ export default function Sidebar() {
           <button
             onClick={handleNewChat}
             disabled={isSearching || !phoneInput.trim()}
-            className="mt-2 w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black text-sm font-medium py-1.5 rounded-lg"
+            className="mt-2 w-full bg-theme-primary disabled:opacity-50 text-black text-sm font-medium py-1.5 rounded-lg"
           >
             {isSearching ? 'Searching...' : 'Start Chat'}
           </button>
@@ -159,7 +159,7 @@ export default function Sidebar() {
               }`}
             >
               <div className="w-10 h-10 rounded-full flex-shrink-0 relative">
-                <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-theme-primary flex items-center justify-center text-white font-semibold overflow-hidden">
                   {otherParticipant?.avatarUrl ? (
                     <img src={getMediaUrl(otherParticipant.avatarUrl)} className="w-full h-full object-cover" alt={name} />
                   ) : (
@@ -184,7 +184,7 @@ export default function Sidebar() {
                     {conversation.lastMessage?.content || 'No messages yet'}
                   </p>
                   {unreadCount > 0 && (
-                    <span className="ml-2 flex-shrink-0 rounded-full bg-emerald-500 text-black text-xs px-2 py-0.5 font-semibold">
+                    <span className="ml-2 flex-shrink-0 rounded-full bg-theme-primary text-black text-xs px-2 py-0.5 font-semibold">
                       {unreadCount}
                     </span>
                   )}

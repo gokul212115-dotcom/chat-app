@@ -5,6 +5,7 @@ import SignupPage from './pages/SignupPage';
 import ChatPage from './pages/ChatPage';
 import SettingsPage from './pages/SettingsPage';
 import { useAuthStore } from './store/authStore';
+import { useApplyTheme } from './hooks/useApplyTheme';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -15,6 +16,8 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
+  useApplyTheme();
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

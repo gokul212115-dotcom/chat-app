@@ -62,7 +62,7 @@ export default function LoginPage() {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               required
-              className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+              className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition"
               placeholder="+911234567890"
             />
           </div>
@@ -76,7 +76,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+              className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition"
               placeholder="••••••••"
             />
           </div>
@@ -84,7 +84,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-semibold py-2 rounded-lg transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40"
+            className="w-full bg-theme-primary disabled:opacity-60 text-black font-semibold py-2 rounded-lg transition-all shadow-lg shadow-theme-primary"
           >
             {isLoading ? 'Logging in...' : 'Log in'}
           </button>
@@ -92,7 +92,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-sm text-center text-gray-400">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-emerald-400 font-medium hover:underline">
+          <Link to="/signup" className="text-theme-primary font-medium hover:underline">
             Sign up
           </Link>
         </p>

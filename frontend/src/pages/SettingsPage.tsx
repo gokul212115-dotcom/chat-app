@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api, uploadFile, getMediaUrl } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 import AvatarCropModal from '../components/AvatarCropModal';
+import { useThemeStore, type AccentColor } from '../store/themeStore';
+import { THEME_COLORS } from '../lib/themeColors';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -11,6 +13,9 @@ export default function SettingsPage() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const refreshToken = useAuthStore((state) => state.refreshToken);
   const logout = useAuthStore((state) => state.logout);
+
+  const accentColor = useThemeStore((state) => state.accentColor);
+  const setAccentColor = useThemeStore((state) => state.setAccentColor);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,7 +123,7 @@ export default function SettingsPage() {
 
           <div className="flex items-center gap-4 mb-6">
             <button onClick={handleAvatarClick} className="relative">
-              <div className="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xl font-semibold overflow-hidden">
+              <div className="w-16 h-16 rounded-full bg-theme-primary flex items-center justify-center text-white text-xl font-semibold overflow-hidden">
                 {user?.avatarUrl ? (
                   <img src={getMediaUrl(user.avatarUrl)} className="w-full h-full object-cover" alt="avatar" />
                 ) : (
@@ -150,7 +155,7 @@ export default function SettingsPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 ring-theme-primary"
               />
             </div>
             <div>
@@ -159,16 +164,16 @@ export default function SettingsPage() {
                 type="text"
                 value={statusMessage}
                 onChange={(e) => setStatusMessage(e.target.value)}
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 ring-theme-primary"
               />
             </div>
             {profileMessage && (
-              <p className="text-xs text-emerald-400">{profileMessage}</p>
+              <p className="text-xs text-theme-primary">{profileMessage}</p>
             )}
             <button
               onClick={handleSaveProfile}
               disabled={profileSaving}
-              className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-medium px-4 py-2 rounded-lg text-sm"
+              className="bg-theme-primary disabled:opacity-60 text-black font-medium px-4 py-2 rounded-lg text-sm"
             >
               {profileSaving ? 'Saving...' : 'Save Profile'}
             </button>
@@ -192,7 +197,7 @@ export default function SettingsPage() {
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 ring-theme-primary"
               />
             </div>
             <div>
@@ -201,7 +206,7 @@ export default function SettingsPage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 ring-theme-primary"
               />
             </div>
             <div>
@@ -210,21 +215,45 @@ export default function SettingsPage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 ring-theme-primary"
               />
             </div>
             {passwordMessage && (
-              <p className={`text-xs ${passwordMessage.isError ? 'text-red-400' : 'text-emerald-400'}`}>
+              <p className={`text-xs ${passwordMessage.isError ? 'text-red-400' : 'text-theme-primary'}`}>
                 {passwordMessage.text}
               </p>
             )}
             <button
               onClick={handleChangePassword}
               disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}
-              className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-medium px-4 py-2 rounded-lg text-sm"
+              className="bg-theme-primary disabled:opacity-60 text-black font-medium px-4 py-2 rounded-lg text-sm"
             >
               {passwordSaving ? 'Updating...' : 'Change Password'}
             </button>
+          </div>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+          <h2 className="text-sm font-medium text-gray-400 mb-4">Appearance</h2>
+          <p className="text-sm text-gray-400 mb-3">Accent Color</p>
+          <div className="flex gap-3">
+            {Object.entries(THEME_COLORS).map(([key, colors]) => (
+              <button
+                key={key}
+                onClick={() => setAccentColor(key as AccentColor)}
+                className="flex flex-col items-center gap-1.5"
+                title={colors.label}
+              >
+                <span
+                  className="w-9 h-9 rounded-full border-2 transition-all"
+                  style={{
+                    backgroundColor: colors.primary,
+                    borderColor: accentColor === key ? "#ffffff" : "transparent",
+                  }}
+                />
+                <span className="text-[10px] text-gray-500">{colors.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 

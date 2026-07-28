@@ -8,3 +8,22 @@
     linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size: 40px 40px;
 }
+
+.bg-theme-primary {
+  background-color: var(--color-primary, #10b981);
+}
+.bg-theme-primary:hover {
+  background-color: var(--color-primary-hover, #34d399);
+}
+.text-theme-primary {
+  color: var(--color-primary, #10b981);
+}
+.border-theme-primary {
+  border-color: var(--color-primary, #10b981);
+}
+.ring-theme-primary:focus {
+  --tw-ring-color: var(--color-primary, #10b981);
+}
+.shadow-theme-primary {
+  box-shadow: 0 10px 15px -3px var(--color-primary-light, rgba(16,185,129,0.1));
+}
