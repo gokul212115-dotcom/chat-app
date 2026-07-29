@@ -9,6 +9,7 @@ import { useCamera } from '../hooks/useCamera';
 import CameraModal from '../components/CameraModal';
 import type { Message, Conversation } from '../types/chat';
 import GroupInfoModal from './GroupInfoModal';
+import AttachmentMenu from './AttachmentMenu';
 
 const EMPTY_MESSAGES: Message[] = [];
 const EMPTY_TYPING: number[] = [];
@@ -299,6 +300,37 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
     });
   };
 
+  const handleLocationClick = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        socket.emit(
+          'message:send',
+          {
+            conversationId,
+            content: `${latitude},${longitude}`,
+            messageType: 'LOCATION',
+            replyToMessageId: replyingTo?.id ?? null,
+          },
+          (response: { message?: Message; error?: string }) => {
+            if (response?.message) {
+              addMessage(conversationId, response.message);
+            }
+          }
+        );
+        setReplyingTo(null);
+      },
+      (error) => {
+        alert('Unable to retrieve your location. Please allow location access.');
+        console.error(error);
+      }
+    );
+  };
+
   return (
     <div className="flex-1 h-screen flex flex-col bg-black">
       {isCameraModalOpen && (
@@ -433,6 +465,31 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
                       </svg>
                       <span>{message.content.split('/').pop()}</span>
                     </a>
+                  ) : message.messageType === 'LOCATION' ? (
+                    (() => {
+                      const [lat, lng] = (message.content || '').split(',');
+                      const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+                      const staticMapUrl = `https://tile.openstreetmap.org/15/${Math.floor((parseFloat(lng) + 180) / 360 * Math.pow(2, 15))}/${Math.floor((1 - Math.log(Math.tan(parseFloat(lat) * Math.PI / 180) + 1 / Math.cos(parseFloat(lat) * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 15))}.png`;
+                      return (
+                        <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden bg-white/5">
+                          <div className="relative w-full h-40 bg-gray-800 flex items-center justify-center overflow-hidden">
+                            <img src={staticMapUrl} alt="Location" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <div className="relative z-10 text-red-500">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 drop-shadow-lg">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div className="bg-white/10 px-3 py-1.5 text-xs flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                              <circle cx="12" cy="10" r="3" />
+                            </svg>
+                            Open in Google Maps
+                          </div>
+                        </a>
+                      );
+                    })()
                   ) : (
                     <p>{message.content}</p>
                   )}
@@ -570,33 +627,15 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
         {isUploadingFile && (
           <span className="text-gray-500 mr-2">Uploading...</span>
         )}
-        <button
-          onClick={() => document.querySelector('input[type="file"]')?.click()}
-          className="bg-theme-primary text-black font-semibold px-3 py-2 rounded-full text-sm"
-        >
-          {isUploadingFile ? 'Uploading...' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-            <path d="M21.44 11.05l-9.19 9.19a5 5 0 01-7.07-7.07l9.19-9.19a3.5 3.5 0 014.95 4.95l-9.2 9.19a1.5 1.5 0 01-2.12-2.12l8.49-8.48" />
-          </svg>}
-        </button>
-        <button
-          onClick={handleCaptureClick}
-          className="bg-theme-primary text-black font-semibold px-3 py-2 rounded-full text-sm"
-        >
-          {<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-            <circle cx="12" cy="13" r="4" />
-          </svg>}
-        </button>
-        <button
-          onClick={() => document.querySelector('input[data-gallery="true"]')?.click()}
-          className="bg-theme-primary text-black font-semibold px-3 py-2 rounded-full text-sm"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="M21 15l-5-5L5 21" />
-          </svg>
-        </button>
+        <AttachmentMenu
+          onCameraClick={handleCaptureClick}
+          onGalleryClick={() => document.querySelector('input[data-gallery="true"]')?.click()}
+          onDocumentClick={() => document.querySelector('input[type="file"]')?.click()}
+          onLocationClick={handleLocationClick}
+        />
+        {isUploadingFile && (
+          <span className="text-gray-500 text-xs">Uploading...</span>
+        )}
         <input
           type="file"
           accept="image/*"
