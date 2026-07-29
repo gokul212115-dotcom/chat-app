@@ -136,6 +136,7 @@ enum MessageType {
   VIDEO
   AUDIO
   DOCUMENT
+  LOCATION
 }
 
 enum Status {
