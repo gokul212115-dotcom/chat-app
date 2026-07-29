@@ -58,6 +58,16 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
   const otherParticipant = conversation?.participants.find((p) => p.id !== currentUser?.id);
   const otherTypingUsers = typingUsers.filter((id) => id !== currentUser?.id);
 
+  const typingNames = conversation
+    ? otherTypingUsers
+        .map((id) => conversation.participants.find((p) => p.id === id)?.name)
+        .filter(Boolean)
+    : [];
+
+  const onlineMembersCount = conversation?.isGroup
+    ? conversation.participants.filter((p) => p.id !== currentUser?.id && p.isOnline).length
+    : 0;
+
   useEffect(() => {
     api.get(`/conversations/${conversationId}/messages`).then((response) => {
       const fetched: Message[] = response.data.messages || [];
@@ -291,7 +301,18 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
       )}
       <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-theme-primary flex items-center justify-center text-white font-semibold overflow-hidden">
-          {otherParticipant?.avatarUrl ? (
+          {conversation?.isGroup ? (
+            conversation.groupAvatarUrl ? (
+              <img src={getMediaUrl(conversation.groupAvatarUrl)} className="w-full h-full object-cover" alt="group avatar" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                <path d="M16 3.13a4 4 0 010 7.75" />
+              </svg>
+            )
+          ) : otherParticipant?.avatarUrl ? (
             <img src={getMediaUrl(otherParticipant.avatarUrl)} className="w-full h-full object-cover" alt="avatar" />
           ) : (
             getConversationName(conversation, currentUser?.id).charAt(0).toUpperCase()
@@ -302,8 +323,19 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
             {getConversationName(conversation, currentUser?.id)}
           </p>
           {otherTypingUsers.length > 0 ? (
-            <p className="text-theme-primary text-xs">typing...</p>
-          ) : conversation && !conversation.isGroup && otherParticipant ? (
+            <p className="text-theme-primary text-xs">
+              {conversation?.isGroup
+                ? typingNames.length === 1
+                  ? `${typingNames[0]} is typing...`
+                  : `${typingNames.join(', ')} are typing...`
+                : 'typing...'}
+            </p>
+          ) : conversation?.isGroup ? (
+            <p className="text-gray-500 text-xs">
+              {conversation.participants.length} members
+              {onlineMembersCount > 0 ? `, ${onlineMembersCount} online` : ''}
+            </p>
+          ) : conversation && otherParticipant ? (
             otherParticipant.isOnline ? (
               <p className="text-theme-primary text-xs">online</p>
             ) : (
@@ -339,6 +371,9 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
                       : 'bg-white/10 text-gray-100 rounded-bl-sm'
                   }`}
                 >
+                  {conversation?.isGroup && !isOwn && (
+                    <p className="text-xs font-semibold text-theme-primary mb-1">{message.senderName}</p>
+                  )}
                   {message.replyToMessage && (
                     <div className="mb-1 px-2 py-1 rounded bg-black/20 border-l-2 border-theme-primary text-xs opacity-80">
                       <p className="font-medium">{message.replyToMessage.senderName}</p>

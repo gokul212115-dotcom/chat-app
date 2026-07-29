@@ -168,13 +168,24 @@ export default function Sidebar() {
             >
               <div className="w-10 h-10 rounded-full flex-shrink-0 relative">
                 <div className="w-10 h-10 rounded-full bg-theme-primary flex items-center justify-center text-white font-semibold overflow-hidden">
-                  {otherParticipant?.avatarUrl ? (
+                  {conversation.isGroup ? (
+                    conversation.groupAvatarUrl ? (
+                      <img src={getMediaUrl(conversation.groupAvatarUrl)} className="w-full h-full object-cover" alt={name} />
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                        <path d="M16 3.13a4 4 0 010 7.75" />
+                      </svg>
+                    )
+                  ) : otherParticipant?.avatarUrl ? (
                     <img src={getMediaUrl(otherParticipant.avatarUrl)} className="w-full h-full object-cover" alt={name} />
                   ) : (
                     letter
                   )}
                 </div>
-                {otherParticipant?.isOnline && (
+                {!conversation.isGroup && otherParticipant?.isOnline && (
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-950"></span>
                 )}
               </div>
