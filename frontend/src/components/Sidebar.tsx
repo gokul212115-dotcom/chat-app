@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, findUserByPhone, getMediaUrl } from '../lib/api';
+import CreateGroupModal from './CreateGroupModal';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useSocket } from '../hooks/useSocket';
@@ -42,6 +43,7 @@ export default function Sidebar() {
   const socket = useSocket();
 
   const [showNewChat, setShowNewChat] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [phoneInput, setPhoneInput] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -101,6 +103,12 @@ export default function Sidebar() {
             className="text-theme-primary hover:opacity-80 text-sm font-medium"
           >
             + New Chat
+          </button>
+          <button
+            onClick={() => setShowCreateGroup(true)}
+            className="text-theme-primary hover:opacity-80 text-sm font-medium"
+          >
+            + Group
           </button>
           <button
             onClick={() => navigate('/settings')}
@@ -194,6 +202,17 @@ export default function Sidebar() {
           );
         })}
       </div>
+
+      {showCreateGroup && (
+        <CreateGroupModal
+          onClose={() => setShowCreateGroup(false)}
+          onCreated={(conversation) => {
+            addConversation(conversation);
+            setShowCreateGroup(false);
+            navigate(`/chat/${conversation.id}`);
+          }}
+        />
+      )}
     </div>
   );
 }
