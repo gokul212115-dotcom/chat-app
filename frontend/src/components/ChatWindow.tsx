@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { api, uploadFile, getMediaUrl } from '../lib/api';
 import { useChatStore } from '../store/chatStore';
@@ -7,6 +8,7 @@ import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { useCamera } from '../hooks/useCamera';
 import CameraModal from '../components/CameraModal';
 import type { Message, Conversation } from '../types/chat';
+import GroupInfoModal from './GroupInfoModal';
 
 const EMPTY_MESSAGES: Message[] = [];
 const EMPTY_TYPING: number[] = [];
@@ -38,6 +40,8 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
   const socket = useSocket();
   const currentUser = useAuthStore((state) => state.user);
   const conversations = useChatStore((state) => state.conversations);
+  const setConversations = useChatStore((state) => state.setConversations);
+  const navigate = useNavigate();
   const messages = useChatStore((state) => state.messages[conversationId] ?? EMPTY_MESSAGES);
   const setMessages = useChatStore((state) => state.setMessages);
   const addMessage = useChatStore((state) => state.addMessage);
@@ -49,6 +53,7 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
   const [editText, setEditText] = useState('');
   const [reactionPickerFor, setReactionPickerFor] = useState<number | null>(null);
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -299,7 +304,26 @@ export default function ChatWindow({ conversationId }: { conversationId: number 
       {isCameraModalOpen && (
         <CameraModal onClose={() => { stopCamera(); setIsCameraModalOpen(false); }} onSend={handleSendPhoto} />
       )}
-      <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+      {isGroupInfoOpen && conversation && conversation.isGroup && (
+        <GroupInfoModal
+          conversation={conversation}
+          onClose={() => setIsGroupInfoOpen(false)}
+          onUpdated={(updated) => {
+            setConversations(
+              conversations.map((c) => (c.id === updated.id ? updated : c))
+            );
+          }}
+          onLeft={() => {
+            setIsGroupInfoOpen(false);
+            setConversations(conversations.filter((c) => c.id !== conversation.id));
+            navigate('/');
+          }}
+        />
+      )}
+      <div
+        className={`px-6 py-4 border-b border-white/10 flex items-center gap-3 ${conversation?.isGroup ? 'cursor-pointer hover:bg-white/5' : ''}`}
+        onClick={() => conversation?.isGroup && setIsGroupInfoOpen(true)}
+      >
         <div className="w-9 h-9 rounded-full bg-theme-primary flex items-center justify-center text-white font-semibold overflow-hidden">
           {conversation?.isGroup ? (
             conversation.groupAvatarUrl ? (
