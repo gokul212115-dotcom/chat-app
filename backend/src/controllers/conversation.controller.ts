@@ -261,3 +261,180 @@ export async function getConversationMessages(req: Request, res: Response) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+
+const addMembersSchema = z.object({
+  userIds: z.array(z.number()),
+});
+
+export async function addMembers(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { conversationId } = req.params as { conversationId: string };
+    const conversationIdNum = parseInt(conversationId, 10);
+
+    const { userIds } = addMembersSchema.parse(req.body);
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationIdNum },
+      include: { participants: true },
+    });
+
+    if (!conversation || !conversation.isGroup) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    const requester = conversation.participants.find((p) => p.userId === userId);
+    if (!requester) {
+      return res.status(403).json({ message: 'Not a member of this group' });
+    }
+
+    const existingIds = new Set(conversation.participants.map((p) => p.userId));
+    const newUserIds = userIds.filter((id) => !existingIds.has(id));
+
+    if (newUserIds.length === 0) {
+      return res.status(400).json({ message: 'All specified users are already members' });
+    }
+
+    await prisma.conversationParticipant.createMany({
+      data: newUserIds.map((newUserId) => ({
+        conversationId: conversationIdNum,
+        userId: newUserId,
+        role: 'MEMBER' as const,
+      })),
+    });
+
+    const updated = await prisma.conversation.findUnique({
+      where: { id: conversationIdNum },
+      include: {
+        participants: {
+          include: { user: { select: userSelect } },
+        },
+      },
+    });
+
+    return res.json(updated);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function removeMember(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { conversationId, memberId } = req.params as { conversationId: string; memberId: string };
+    const conversationIdNum = parseInt(conversationId, 10);
+    const memberIdNum = parseInt(memberId, 10);
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationIdNum },
+      include: { participants: true },
+    });
+
+    if (!conversation || !conversation.isGroup) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    const requester = conversation.participants.find((p) => p.userId === userId);
+    if (!requester || requester.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Only admins can remove members' });
+    }
+
+    await prisma.conversationParticipant.deleteMany({
+      where: { conversationId: conversationIdNum, userId: memberIdNum },
+    });
+
+    return res.json({ message: 'Member removed successfully' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function leaveGroup(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { conversationId } = req.params as { conversationId: string };
+    const conversationIdNum = parseInt(conversationId, 10);
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationIdNum },
+      include: { participants: true },
+    });
+
+    if (!conversation || !conversation.isGroup) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    await prisma.conversationParticipant.deleteMany({
+      where: { conversationId: conversationIdNum, userId },
+    });
+
+    return res.json({ message: 'Left group successfully' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+const updateGroupSchema = z.object({
+  groupName: z.string().min(1).optional(),
+  groupAvatarUrl: z.string().optional(),
+});
+
+export async function updateGroup(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { conversationId } = req.params as { conversationId: string };
+    const conversationIdNum = parseInt(conversationId, 10);
+
+    const { groupName, groupAvatarUrl } = updateGroupSchema.parse(req.body);
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationIdNum },
+      include: { participants: true },
+    });
+
+    if (!conversation || !conversation.isGroup) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    const requester = conversation.participants.find((p) => p.userId === userId);
+    if (!requester) {
+      return res.status(403).json({ message: 'Not a member of this group' });
+    }
+
+    const updated = await prisma.conversation.update({
+      where: { id: conversationIdNum },
+      data: { groupName, groupAvatarUrl },
+    });
+
+    return res.json(updated);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
