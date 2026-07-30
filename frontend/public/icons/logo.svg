@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="bubbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
+
+  <path d="
+    M 128 160
+    Q 128 120 168 120
+    L 344 120
+    Q 384 120 384 160
+    L 384 288
+    Q 384 328 344 328
+    L 220 328
+    L 160 388
+    L 168 328
+    L 168 328
+    Q 128 328 128 288
+    Z"
+    fill="url(#bubbleGrad)"/>
+
+  <circle cx="196" cy="222" r="16" fill="#031412"/>
+  <circle cx="256" cy="222" r="16" fill="#031412"/>
+  <circle cx="316" cy="222" r="16" fill="#031412"/>
+</svg>

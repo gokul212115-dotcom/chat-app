@@ -106,6 +106,8 @@ export default function ChatPage() {
 
       <CallModal
         callStatus={call.callStatus}
+        callError={call.callError}
+        onDismissError={call.clearCallError}
         callType={call.callType}
         remoteUserName={getRemoteUserName()}
         localStream={call.localStream}

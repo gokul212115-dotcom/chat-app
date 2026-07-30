@@ -1,4 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+
+function getMediaErrorMessage(error: unknown): string {
+  if (error instanceof DOMException) {
+    if (error.name === 'NotFoundError') {
+      return 'No microphone or camera found on this device.';
+    }
+    if (error.name === 'NotAllowedError') {
+      return 'Microphone/camera access was denied. Please allow permissions.';
+    }
+  }
+  return 'Unable to access microphone or camera.';
+}
 import { useSocket } from './useSocket';
 import { useAuthStore } from '../store/authStore';
 
@@ -29,6 +41,7 @@ export function useCall() {
   const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [callError, setCallError] = useState<string | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
@@ -104,6 +117,7 @@ export function useCall() {
       });
     } catch (error) {
       console.error('Failed to start call:', error);
+      setCallError(getMediaErrorMessage(error));
       cleanupCall();
     }
   }, [socket, createPeerConnection, cleanupCall]);
@@ -142,6 +156,7 @@ export function useCall() {
       setCallStatus('connected');
     } catch (error) {
       console.error('Failed to accept call:', error);
+      setCallError(getMediaErrorMessage(error));
       cleanupCall();
     }
   }, [socket, incomingCall, createPeerConnection, cleanupCall]);
@@ -229,6 +244,8 @@ export function useCall() {
   return {
     callStatus,
     callType,
+    callError,
+    clearCallError: () => setCallError(null),
     remoteUserId,
     incomingCall,
     localStream,

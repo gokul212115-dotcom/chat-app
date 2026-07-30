@@ -4,6 +4,8 @@ import type { CallStatus, CallType } from '../hooks/useCall';
 interface CallModalProps {
   callStatus: CallStatus;
   callType: CallType;
+  callError?: string | null;
+  onDismissError?: () => void;
   remoteUserName: string;
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
@@ -17,6 +19,8 @@ interface CallModalProps {
 export default function CallModal({
   callStatus,
   callType,
+  callError,
+  onDismissError,
   remoteUserName,
   localStream,
   remoteStream,
@@ -45,7 +49,15 @@ export default function CallModal({
     }
   }, [remoteStream, callType]);
 
-  if (callStatus === 'idle') return null;
+  if (callStatus === 'idle') {
+    if (!callError) return null;
+    return (
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-500/90 text-white text-sm px-4 py-2 rounded-lg z-50 flex items-center gap-3">
+        {callError}
+        <button onClick={onDismissError} className="font-bold">×</button>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
