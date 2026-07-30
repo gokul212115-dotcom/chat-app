@@ -369,6 +369,68 @@ export const registerSocketHandlers = (io: Server) => {
       }
     });
 
+    socket.on('call:offer', (data) => {
+      try {
+        const { toUserId, conversationId, offer, callType } = data;
+        io.to(`user:${toUserId}`).emit('call:incoming', {
+          fromUserId: userId,
+          conversationId,
+          offer,
+          callType,
+        });
+      } catch (error) {
+        console.error(error);
+        socket.emit('error', { message: 'Failed to send call offer' });
+      }
+    });
+
+    socket.on('call:answer', (data) => {
+      try {
+        const { toUserId, answer } = data;
+        io.to(`user:${toUserId}`).emit('call:answered', {
+          fromUserId: userId,
+          answer,
+        });
+      } catch (error) {
+        console.error(error);
+        socket.emit('error', { message: 'Failed to send call answer' });
+      }
+    });
+
+    socket.on('call:ice-candidate', (data) => {
+      try {
+        const { toUserId, candidate } = data;
+        io.to(`user:${toUserId}`).emit('call:ice-candidate', {
+          fromUserId: userId,
+          candidate,
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    socket.on('call:reject', (data) => {
+      try {
+        const { toUserId } = data;
+        io.to(`user:${toUserId}`).emit('call:rejected', {
+          fromUserId: userId,
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    socket.on('call:end', (data) => {
+      try {
+        const { toUserId } = data;
+        io.to(`user:${toUserId}`).emit('call:ended', {
+          fromUserId: userId,
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
     initializeConnection(io, socket, userId);
   });
 };
