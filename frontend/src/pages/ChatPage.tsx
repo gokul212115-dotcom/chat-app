@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import ChatWindow from '../components/ChatWindow';
+import CallModal from '../components/CallModal';
 import { useChatStore } from '../store/chatStore';
 import { useSocket } from '../hooks/useSocket';
+import { useCall } from '../hooks/useCall';
 import type { Message } from '../types/chat';
 
 export default function ChatPage() {
@@ -16,7 +18,10 @@ export default function ChatPage() {
   const removeMessageContent = useChatStore((state) => state.removeMessageContent);
   const addReaction = useChatStore((state) => state.addReaction);
   const removeReaction = useChatStore((state) => state.removeReaction);
+  const conversations = useChatStore((state) => state.conversations);
   const socket = useSocket();
+
+  const call = useCall();
 
   useEffect(() => {
     setActiveConversation(conversationId ? parseInt(conversationId, 10) : null);
@@ -78,16 +83,39 @@ export default function ChatPage() {
 
   const activeId = conversationId ? parseInt(conversationId, 10) : null;
 
+  const getRemoteUserName = () => {
+    const targetId = call.incomingCall?.fromUserId ?? call.remoteUserId;
+    if (!targetId) return 'Unknown';
+    for (const conv of conversations) {
+      const participant = conv.participants.find((p) => p.id === targetId);
+      if (participant) return participant.name;
+    }
+    return 'Unknown';
+  };
+
   return (
     <div className="flex h-screen bg-black">
       <Sidebar />
       {activeId ? (
-        <ChatWindow conversationId={activeId} />
+        <ChatWindow conversationId={activeId} onStartCall={call.startCall} />
       ) : (
         <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
           Select a conversation to start chatting
         </div>
       )}
+
+      <CallModal
+        callStatus={call.callStatus}
+        callType={call.callType}
+        remoteUserName={getRemoteUserName()}
+        localStream={call.localStream}
+        remoteStream={call.remoteStream}
+        onAccept={call.acceptCall}
+        onReject={call.rejectCall}
+        onEnd={call.endCall}
+        onToggleMute={call.toggleMute}
+        onToggleCamera={call.toggleCamera}
+      />
     </div>
   );
 }
