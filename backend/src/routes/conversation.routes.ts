@@ -12,5 +12,6 @@ router.post('/:conversationId/members', conversationController.addMembers);
 router.delete('/:conversationId/members/:memberId', conversationController.removeMember);
 router.post('/:conversationId/leave', conversationController.leaveGroup);
 router.patch('/:conversationId', conversationController.updateGroup);
+router.post('/:conversationId/archive', conversationController.toggleArchive);
 
 export default router;

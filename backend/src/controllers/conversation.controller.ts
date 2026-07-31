@@ -155,25 +155,29 @@ export async function listConversations(req: Request, res: Response) {
       ? conversations[conversations.length - 1].id.toString()
       : null;
 
-    const result = conversations.slice(0, limit).map(conversation => ({
-      id: conversation.id,
-      isGroup: conversation.isGroup,
-      groupName: conversation.groupName,
-      participants: conversation.participants.map(participant => ({
-        id: participant.userId,
-        name: participant.user.name,
-        phoneNumber: participant.user.phoneNumber,
-        avatarUrl: participant.user.avatarUrl,
-        isOnline: participant.user.isOnline,
-        lastSeenAt: participant.user.lastSeenAt,
-      })),
-      lastMessage: conversation.messages.length > 0 ? {
-        id: conversation.messages[0].id,
-        content: conversation.messages[0].content,
-        senderId: conversation.messages[0].senderId,
-        createdAt: conversation.messages[0].createdAt,
-      } : null,
-    }));
+    const result = conversations.slice(0, limit).map(conversation => {
+      const myParticipant = conversation.participants.find(p => p.userId === userId);
+      return {
+        id: conversation.id,
+        isGroup: conversation.isGroup,
+        groupName: conversation.groupName,
+        isArchived: myParticipant?.isArchived ?? false,
+        participants: conversation.participants.map(participant => ({
+          id: participant.userId,
+          name: participant.user.name,
+          phoneNumber: participant.user.phoneNumber,
+          avatarUrl: participant.user.avatarUrl,
+          isOnline: participant.user.isOnline,
+          lastSeenAt: participant.user.lastSeenAt,
+        })),
+        lastMessage: conversation.messages.length > 0 ? {
+          id: conversation.messages[0].id,
+          content: conversation.messages[0].content,
+          senderId: conversation.messages[0].senderId,
+          createdAt: conversation.messages[0].createdAt,
+        } : null,
+      };
+    });
 
     return res.json({ conversations: result, nextCursor });
   } catch (error) {
@@ -434,6 +438,37 @@ export async function updateGroup(req: Request, res: Response) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: error.message });
     }
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+
+export async function toggleArchive(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { conversationId } = req.params as { conversationId: string };
+    const conversationIdNum = parseInt(conversationId, 10);
+
+    const participant = await prisma.conversationParticipant.findFirst({
+      where: { conversationId: conversationIdNum, userId },
+    });
+
+    if (!participant) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    const updated = await prisma.conversationParticipant.update({
+      where: { id: participant.id },
+      data: { isArchived: !participant.isArchived },
+    });
+
+    return res.json({ isArchived: updated.isArchived });
+  } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Internal server error' });
   }
