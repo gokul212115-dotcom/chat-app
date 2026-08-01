@@ -18,6 +18,8 @@ export interface Conversation {
   id: number;
   isGroup: boolean;
   groupName: string | null;
+  groupAvatarUrl?: string | null;
+  isArchived?: boolean;
   participants: ConversationParticipant[];
   lastMessage: LastMessagePreview | null;
 }
