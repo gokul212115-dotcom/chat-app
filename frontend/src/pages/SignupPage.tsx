@@ -10,11 +10,29 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
 
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSendOtp = (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!phoneNumber || !name || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setOtpSent(true);
+  };
+
+  const handleVerifyOtp = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
@@ -30,6 +48,7 @@ export default function SignupPage() {
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Signup failed. Please try again.');
+      setOtpSent(false);
     } finally {
       setIsLoading(false);
     }
@@ -52,58 +71,103 @@ export default function SignupPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition"
-              placeholder="Your name"
-            />
-          </div>
+        {!otpSent && (
+          <form onSubmit={handleSendOtp} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition"
+                placeholder="Your name"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Phone number
-            </label>
-            <input
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              required
-              className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition"
-              placeholder="+911234567890"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Phone number</label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                required
+                className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition"
+                placeholder="+911234567890"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition"
-              placeholder="At least 6 characters"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition"
+                placeholder="At least 6 characters"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-theme-primary disabled:opacity-60 text-black font-semibold py-2 rounded-lg transition-all shadow-lg shadow-theme-primary"
-          >
-            {isLoading ? 'Creating account...' : 'Sign up'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="w-full bg-theme-primary text-black font-semibold py-2 rounded-lg transition-all shadow-lg shadow-theme-primary"
+            >
+              Send OTP
+            </button>
+          </form>
+        )}
+
+        {otpSent && (
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <p className="text-gray-400 text-sm text-center">
+              OTP sent to <span className="text-white">{phoneNumber}</span>
+            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Enter OTP</label>
+              <div className="relative w-full overflow-hidden rounded-lg bg-white/5 border border-white/10">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  required
+                  className="w-full bg-transparent text-white text-center tracking-widest text-lg px-3 py-2 focus:outline-none focus:ring-2 ring-theme-primary focus:border-transparent transition placeholder-transparent"
+                  placeholder="Enter any 6 digits to create account"
+                  autoFocus
+                />
+                {!otpCode && (
+                  <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden px-3">
+                    <span className="text-gray-500 text-lg tracking-widest whitespace-nowrap animate-marquee">
+                      Enter any 6 digits to create account &nbsp;&nbsp;&nbsp;
+                      Enter any 6 digits to create account &nbsp;&nbsp;&nbsp;
+                      Enter any 6 digits to create account
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading || otpCode.length < 6}
+              className="w-full bg-theme-primary disabled:opacity-60 text-black font-semibold py-2 rounded-lg transition-all shadow-lg shadow-theme-primary"
+            >
+              {isLoading ? 'Creating account...' : 'Verify & Create Account'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setOtpSent(false); setOtpCode(''); setError(null); }}
+              className="w-full text-gray-400 text-sm hover:text-white transition"
+            >
+              Change phone number
+            </button>
+          </form>
+        )}
 
         <p className="mt-6 text-sm text-center text-gray-400">
           Already have an account?{' '}
@@ -112,6 +176,17 @@ export default function SignupPage() {
           </Link>
         </p>
       </div>
+
+      {/* Tailwind custom animation for marquee */}
+      <style>{`
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-33.333%); }
+        }
+        .animate-marquee {
+          animation: marquee 8s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }

@@ -35,13 +35,11 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-black overflow-hidden px-4">
-      {/* animated background */}
       <div className="absolute inset-0 bg-grid" />
       <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/30 rounded-full blur-3xl animate-float" />
       <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/30 rounded-full blur-3xl animate-floatSlow" />
       <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl animate-glow" />
 
-      {/* card */}
       <div className="relative z-10 w-full max-w-sm bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8 animate-fadeInUp">
         <h1 className="text-2xl font-bold text-white mb-1">Welcome back</h1>
         <p className="text-gray-400 mb-6 text-sm">Log in to continue chatting</p>
