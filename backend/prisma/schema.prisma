@@ -29,6 +29,7 @@ model User {
   sentMessages     Message[]                 @relation("SentMessages")
   messageStatuses  MessageStatus[]
   messageReactions MessageReaction[]
+  stories         Story[]
 }
 
 model Contact {
@@ -143,4 +144,25 @@ enum Status {
   SENT
   DELIVERED
   READ
+}
+
+model Story {
+  id              Int            @id @default(autoincrement())
+  user            User           @relation(fields: [userId], references: [id])
+  userId          Int
+  caption         String?
+  mediaUrl        String?
+  mediaType       StoryMediaType @default(TEXT)
+  mimeType        String?
+  sizeBytes       Int?
+  durationSeconds Float?
+  expiresAt       DateTime
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+enum StoryMediaType {
+  TEXT
+  IMAGE
+  VIDEO
 }

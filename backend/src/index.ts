@@ -12,6 +12,7 @@ import userRoutes from './routes/user.routes';
 import contactRoutes from './routes/contact.routes';
 import conversationRoutes from './routes/conversation.routes';
 import uploadRoutes from './routes/upload.routes';
+import storyRoutes from './routes/story.routes';
 import { socketAuthMiddleware } from './sockets/socket.auth';
 import { registerSocketHandlers } from './sockets/socket.handlers';
 import { UPLOAD_DIR } from './config/upload';
@@ -41,6 +42,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/stories', storyRoutes);
 
 const PORT = process.env.PORT || 3000;
 
