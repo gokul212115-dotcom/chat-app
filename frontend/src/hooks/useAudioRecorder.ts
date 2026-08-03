@@ -8,7 +8,7 @@ export function useAudioRecorder() {
 
   let mediaRecorder: MediaRecorder | null = null;
   let audioChunks: BlobPart[] = [];
-  let timer: NodeJS.Timeout | null = null;
+  let timer: ReturnType<typeof setInterval> | null = null;
 
   useEffect(() => {
     return () => {

@@ -40,9 +40,11 @@ function formatLastSeen(dateString: string | null): string {
 export default function ChatWindow({
   conversationId,
   onStartCall,
+  onBack,
 }: {
   conversationId: number;
   onStartCall: (targetUserId: number, conversationId: number, type: 'audio' | 'video') => void;
+  onBack?: () => void;
 }) {
   const socket = useSocket();
   const currentUser = useAuthStore((state) => state.user);
@@ -95,7 +97,7 @@ export default function ChatWindow({
     const content = input.trim();
     if (!content || !socket) return;
 
-    socket.emit(
+    socket?.emit(
       'message:send',
       {
         conversationId,
@@ -110,7 +112,7 @@ export default function ChatWindow({
       }
     );
 
-    socket.emit('typing:stop', { conversationId });
+    socket?.emit('typing:stop', { conversationId });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     setInput('');
     setReplyingTo(null);
@@ -120,11 +122,11 @@ export default function ChatWindow({
     setInput(value);
     if (!socket) return;
 
-    socket.emit('typing:start', { conversationId });
+    socket?.emit('typing:start', { conversationId });
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('typing:stop', { conversationId });
+      socket?.emit('typing:stop', { conversationId });
     }, 2000);
   };
 
@@ -135,7 +137,7 @@ export default function ChatWindow({
 
   const confirmEdit = (messageId: number) => {
     if (!socket || !editText.trim()) return;
-    socket.emit('message:edit', { messageId, content: editText.trim() }, (response: { error?: string }) => {
+    socket?.emit('message:edit', { messageId, content: editText.trim() }, (response: { error?: string }) => {
       if (!response?.error) {
         setEditingId(null);
         setEditText('');
@@ -147,7 +149,7 @@ export default function ChatWindow({
     if (!socket) return;
     const confirmed = window.confirm('Delete this message for everyone?');
     if (!confirmed) return;
-    socket.emit('message:delete', { messageId, forEveryone: true });
+    socket?.emit('message:delete', { messageId, forEveryone: true });
   };
 
   const handleReactionClick = (message: Message, emoji: string) => {
@@ -156,9 +158,9 @@ export default function ChatWindow({
       (r) => r.userId === currentUser?.id && r.emoji === emoji
     );
     if (alreadyReacted) {
-      socket.emit('reaction:remove', { messageId: message.id, emoji });
+      socket?.emit('reaction:remove', { messageId: message.id, emoji });
     } else {
-      socket.emit('reaction:add', { messageId: message.id, emoji });
+      socket?.emit('reaction:add', { messageId: message.id, emoji });
     }
     setReactionPickerFor(null);
   };
@@ -186,7 +188,7 @@ export default function ChatWindow({
     if (!audioBlob) return;
 
     uploadFile(audioBlob).then((response) => {
-      socket.emit(
+      socket?.emit(
         'message:send',
         {
           conversationId,
@@ -204,7 +206,6 @@ export default function ChatWindow({
       console.error('Error uploading audio:', err);
     });
 
-    setAudioBlob(null);
   }, [audioBlob, conversationId, replyingTo, socket]);
 
   const { videoRef, startCamera, stopCamera, capturePhoto } = useCamera();
@@ -216,7 +217,7 @@ export default function ChatWindow({
 
   const handleSendPhoto = (blob: Blob) => {
     uploadFile(blob, 'photo.jpg').then((response) => {
-      socket.emit(
+      socket?.emit(
         'message:send',
         {
           conversationId,
@@ -247,7 +248,7 @@ export default function ChatWindow({
       return;
     }
     uploadFile(file, file.name).then((response) => {
-      socket.emit(
+      socket?.emit(
         'message:send',
         {
           conversationId,
@@ -285,7 +286,7 @@ export default function ChatWindow({
 
     setIsUploadingFile(true);
     uploadFile(file, file.name).then((response) => {
-      socket.emit(
+      socket?.emit(
         'message:send',
         {
           conversationId,
@@ -314,7 +315,7 @@ export default function ChatWindow({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        socket.emit(
+        socket?.emit(
           'message:send',
           {
             conversationId,
@@ -338,7 +339,7 @@ export default function ChatWindow({
   };
 
   return (
-    <div className="flex-1 h-screen flex flex-col bg-black">
+    <div className="w-full md:flex-1 h-screen flex flex-col bg-black">
       {isCameraModalOpen && (
         <CameraModal onClose={() => { stopCamera(); setIsCameraModalOpen(false); }} onSend={handleSendPhoto} />
       )}
@@ -362,6 +363,11 @@ export default function ChatWindow({
         className={`px-6 py-4 border-b border-white/10 flex items-center gap-3 ${conversation?.isGroup ? 'cursor-pointer hover:bg-white/5' : ''}`}
         onClick={() => conversation?.isGroup && setIsGroupInfoOpen(true)}
       >
+        {onBack && (
+          <button onClick={onBack} className="mr-2 p-1 text-gray-400 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="15 18 9 12 15 6" /></svg>
+          </button>
+        )}
         <div className="w-9 h-9 rounded-full bg-theme-primary flex items-center justify-center text-white font-semibold overflow-hidden">
           {conversation?.isGroup ? (
             conversation.groupAvatarUrl ? (
@@ -492,7 +498,7 @@ export default function ChatWindow({
                         <path d="M14.6 7l-.8-3.6L9 5.2l3.6.8zm-1.5 9H6v-2h5.9c.8 0 1.5.7 1.5 1.5s-.7 1.5-1.5 1.5z" />
                         <path d="M19 4h-3.5c0-.8-.7-1.5-1.5-1.5S12 2.7 12 3.5v.6H8.5C7.7 4 7 4.7 7 5.5s.7 1.5 1.5 1.5H9v10c0 .3-.2.5-.5.5s-.5-.2-.5-.5V6h5v9c0 .3.2.5.5.5s.5-.2.5-.5v-10h1.5c.8 0 1.5.7 1.5 1.5S20.8 4 20 4z" />
                       </svg>
-                      <span>{message.content.split('/').pop()}</span>
+                      <span>{message.content?.split('/').pop()}</span>
                     </a>
                   ) : message.messageType === 'LOCATION' ? (
                     (() => {
@@ -658,8 +664,8 @@ export default function ChatWindow({
         )}
         <AttachmentMenu
           onCameraClick={handleCaptureClick}
-          onGalleryClick={() => document.querySelector('input[data-gallery="true"]')?.click()}
-          onDocumentClick={() => document.querySelector('input[type="file"]')?.click()}
+          onGalleryClick={() => (document.querySelector('input[data-gallery="true"]') as HTMLInputElement).click()}
+          onDocumentClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement).click()}
           onLocationClick={handleLocationClick}
         />
         {isUploadingFile && (

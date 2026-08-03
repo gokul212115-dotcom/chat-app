@@ -11,7 +11,6 @@ interface ChatState {
   setConversations: (conversations: Conversation[]) => void;
   addConversation: (conversation: Conversation) => void;
   setConversationArchived: (conversationId: number, isArchived: boolean) => void;
-  setConversationArchived: (conversationId: number, isArchived: boolean) => void;
   setActiveConversation: (conversationId: number | null) => void;
   setMessages: (conversationId: number, messages: Message[]) => void;
   addMessage: (conversationId: number, message: Message) => void;
@@ -48,12 +47,6 @@ export const useChatStore = create<ChatState>((set) => ({
       ),
     })),
 
-  setConversationArchived: (conversationId, isArchived) =>
-    set((state) => ({
-      conversations: state.conversations.map((c) =>
-        c.id === conversationId ? { ...c, isArchived } : c
-      ),
-    })),
 
   setActiveConversation: (conversationId) => set({ activeConversationId: conversationId }),
 

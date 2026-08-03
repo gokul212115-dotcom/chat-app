@@ -105,6 +105,8 @@ export default function SettingsPage() {
     logout();
     navigate('/login');
   };
+  const handleCropCancel = () => setCropImageSrc(null);
+  const handleCropConfirm = () => setCropImageSrc(null);
 
   return (
     <div className="min-h-screen bg-black text-white">

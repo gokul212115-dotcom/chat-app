@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import ChatWindow from '../components/ChatWindow';
 import CallModal from '../components/CallModal';
+import StatusFeed from '../components/StatusFeed';
 import { useChatStore } from '../store/chatStore';
 import { useSocket } from '../hooks/useSocket';
 import { useCall } from '../hooks/useCall';
@@ -10,6 +11,7 @@ import type { Message } from '../types/chat';
 
 export default function ChatPage() {
   const { conversationId } = useParams();
+  const navigate = useNavigate();
   const setActiveConversation = useChatStore((state) => state.setActiveConversation);
   const addMessage = useChatStore((state) => state.addMessage);
   const setUserTyping = useChatStore((state) => state.setUserTyping);
@@ -22,6 +24,15 @@ export default function ChatPage() {
   const socket = useSocket();
 
   const call = useCall();
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showStatusScreen, setShowStatusScreen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     setActiveConversation(conversationId ? parseInt(conversationId, 10) : null);
@@ -93,15 +104,45 @@ export default function ChatPage() {
     return 'Unknown';
   };
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
+  const showSidebar = !isMobile || (isMobile && !activeId && !showStatusScreen);
+  const showChat = !isMobile || (isMobile && !!activeId);
+
   return (
-    <div className="flex h-screen bg-black">
-      <Sidebar />
-      {activeId ? (
-        <ChatWindow conversationId={activeId} onStartCall={call.startCall} />
-      ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
-          Select a conversation to start chatting
+    <div className="flex h-screen bg-black overflow-hidden">
+      {showSidebar && (
+        <Sidebar onStatusOpen={isMobile ? () => setShowStatusScreen(true) : undefined} />
+      )}
+
+      {isMobile && showStatusScreen && (
+        <div className="flex-1 flex flex-col h-screen">
+          <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
+            <button onClick={() => setShowStatusScreen(false)} className="p-1 text-gray-400 hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <h2 className="text-white font-semibold text-lg">Status</h2>
+          </div>
+          <StatusFeed />
         </div>
+      )}
+
+      {showChat ? (
+        <ChatWindow
+          conversationId={activeId!}
+          onStartCall={call.startCall}
+          onBack={isMobile ? handleBack : undefined}
+        />
+      ) : (
+        !isMobile && (
+          <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+            Select a conversation to start chatting
+          </div>
+        )
       )}
 
       <CallModal

@@ -32,7 +32,7 @@ function formatRelativeTime(dateString: string) {
   return `${diffDay}d`;
 }
 
-export default function Sidebar() {
+export default function Sidebar({ onStatusOpen }: { onStatusOpen?: () => void }) {
   const navigate = useNavigate();
   const currentUser = useAuthStore((state) => state.user);
   const conversations = useChatStore((state) => state.conversations);
@@ -51,6 +51,11 @@ export default function Sidebar() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState<'chats' | 'status'>('chats');
+
+  // Notify parent when Status tab is selected (for mobile fullscreen)
+  useEffect(() => {
+    if (activeTab === 'status' && onStatusOpen) onStatusOpen();
+  }, [activeTab, onStatusOpen]);
 
   useEffect(() => {
     api.get('/conversations').then((response) => {
@@ -98,7 +103,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-80 h-screen bg-gray-950 border-r border-white/10 flex flex-col">
+    <div className="w-full md:w-80 h-screen md:border-r border-white/10 bg-gray-950 flex flex-col">
       {/* Header with tab switcher */}
       <div className="p-4 border-b border-white/10">
         <div className="flex items-center justify-between mb-3">
@@ -132,7 +137,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Action buttons for Chats tab */}
         {activeTab === 'chats' && (
           <div className="flex items-center gap-3">
             <button
@@ -151,7 +155,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Content area */}
       {activeTab === 'chats' ? (
         <>
           {showNewChat && (
