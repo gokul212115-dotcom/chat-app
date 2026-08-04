@@ -233,11 +233,20 @@ export async function getConversationMessages(req: Request, res: Response) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const nextCursor = messages.length > limit
-      ? messages[messages.length - 1].id.toString()
+    // Filter out messages created before the last cleared date for this user
+    const cleared = await prisma.clearedConversation.findUnique({
+      where: { userId_conversationId: { userId, conversationId: conversationIdNum } },
+    });
+    let filteredMessages = messages;
+    if (cleared) {
+      filteredMessages = messages.filter(m => new Date(m.createdAt) > cleared.clearedAt);
+    }
+
+    const nextCursor = filteredMessages.length > limit
+      ? filteredMessages[filteredMessages.length - 1].id.toString()
       : null;
 
-    const result = messages.slice(0, limit).map(message => ({
+    const result = filteredMessages.slice(0, limit).map(message => ({
       id: message.id,
       conversationId: message.conversationId,
       content: message.content,
