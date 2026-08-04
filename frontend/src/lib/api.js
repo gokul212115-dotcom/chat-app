@@ -51,7 +51,8 @@ api.interceptors.response.use((response) => response, async (error) => {
     }
     return Promise.reject(error);
 });
-export async function findUserByPhone(phoneNumber) {
+export async function findUserByPhone(rawPhone) {
+    const phoneNumber = encodeURIComponent(rawPhone);
     try {
         const response = await api.get('/users/search', {
             params: { phoneNumber },

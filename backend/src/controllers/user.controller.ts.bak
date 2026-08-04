@@ -1,19 +1,14 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const prisma = new PrismaClient();
 
-const userSelect = {
-  id: true,
-  phoneNumber: true,
-  name: true,
-  email: true,
-  avatarUrl: true,
-  statusMessage: true,
-  isOnline: true,
-  lastSeenAt: true,
-};
+const updateUserSchema = z.object({
+  name: z.string().optional(),
+  avatarUrl: z.string().optional(),
+  statusMessage: z.string().optional(),
+});
 
 export async function getMe(req: Request, res: Response) {
   try {
@@ -24,7 +19,16 @@ export async function getMe(req: Request, res: Response) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: userSelect,
+      select: {
+        id: true,
+        phoneNumber: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        statusMessage: true,
+        isOnline: true,
+        lastSeenAt: true,
+      },
     });
 
     if (!user) {
@@ -38,13 +42,6 @@ export async function getMe(req: Request, res: Response) {
   }
 }
 
-const updateMeSchema = z.object({
-  name: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  avatarUrl: z.string().optional(),
-  statusMessage: z.string().optional(),
-});
-
 export async function updateMe(req: Request, res: Response) {
   try {
     const userId = req.userId;
@@ -52,16 +49,29 @@ export async function updateMe(req: Request, res: Response) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const data = updateMeSchema.parse(req.body);
+    const { name, avatarUrl, statusMessage } = updateUserSchema.parse(req.body);
 
-    const user = await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data,
-      select: userSelect,
+      data: {
+        name,
+        avatarUrl,
+        statusMessage,
+      },
+      select: {
+        id: true,
+        phoneNumber: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        statusMessage: true,
+        isOnline: true,
+        lastSeenAt: true,
+      },
     });
 
-    return res.json(user);
-  } catch (error: any) {
+    return res.json(updatedUser);
+  } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: error.message });
     }
@@ -83,23 +93,8 @@ export async function searchUsers(req: Request, res: Response) {
       return res.status(400).json({ message: 'Phone number is required' });
     }
 
-    // Flexible search: if input starts with '+', exact match.
-    // If it's all digits, search by ending (country-code agnostic).
-    const isDigitsOnly = /^\d+$/.test(phoneNumber);
-    let where: any;
-    if (phoneNumber.startsWith('+')) {
-      where = { phoneNumber };
-    } else if (isDigitsOnly) {
-      where = { phoneNumber: { endsWith: phoneNumber } };
-    } else {
-      where = { phoneNumber };
-    }
-
-    const user = await prisma.user.findFirst({
-      where: {
-        ...where,
-        id: { not: userId },
-      },
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber },
       select: {
         id: true,
         name: true,
@@ -108,7 +103,7 @@ export async function searchUsers(req: Request, res: Response) {
       },
     });
 
-    if (!user) {
+    if (!user || user.id === userId) {
       return res.status(404).json({ message: 'User not found' });
     }
 

@@ -75,7 +75,8 @@ export interface UserSearchResult {
   avatarUrl: string | null;
 }
 
-export async function findUserByPhone(phoneNumber: string): Promise<UserSearchResult | null> {
+export async function findUserByPhone(rawPhone: string): Promise<UserSearchResult | null> {
+  const phoneNumber = encodeURIComponent(rawPhone);
   try {
     const response = await api.get<UserSearchResult>('/users/search', {
       params: { phoneNumber },
