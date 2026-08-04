@@ -155,6 +155,18 @@ export async function listConversations(req: Request, res: Response) {
       ? conversations[conversations.length - 1].id.toString()
       : null;
 
+    // Fetch block status for this user
+    const blockedUserIds = (await prisma.blockedUser.findMany({
+      where: { blockerId: userId },
+      select: { blockedUserId: true },
+    })).map(b => b.blockedUserId);
+    const blockedByUserIds = (await prisma.blockedUser.findMany({
+      where: { blockedUserId: userId },
+      select: { blockerId: true },
+    })).map(b => b.blockerId);
+    const blockedSet = new Set(blockedUserIds);
+    const blockedBySet = new Set(blockedByUserIds);
+
     const result = conversations.slice(0, limit).map(conversation => {
       const myParticipant = conversation.participants.find(p => p.userId === userId);
       return {
@@ -169,6 +181,8 @@ export async function listConversations(req: Request, res: Response) {
           avatarUrl: participant.user.avatarUrl,
           isOnline: participant.user.isOnline,
           lastSeenAt: participant.user.lastSeenAt,
+          blockedByMe: blockedSet.has(participant.userId),
+          blockedMe: blockedBySet.has(participant.userId),
         })),
         lastMessage: conversation.messages.length > 0 ? {
           id: conversation.messages[0].id,

@@ -237,7 +237,7 @@ export default function Sidebar({ onStatusOpen }: { onStatusOpen?: () => void })
                             letter
                           )}
                         </div>
-                        {!conversation.isGroup && otherParticipant?.isOnline && (
+                        {!conversation.isGroup && otherParticipant?.isOnline && !otherParticipant?.blockedByMe && !otherParticipant?.blockedMe && (
                           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-950"></span>
                         )}
                       </div>

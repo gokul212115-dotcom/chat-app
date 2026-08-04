@@ -5,6 +5,8 @@ export interface ConversationParticipant {
   avatarUrl: string | null;
   isOnline: boolean;
   lastSeenAt: string | null;
+  blockedByMe?: boolean;
+  blockedMe?: boolean;
 }
 
 export interface LastMessagePreview {
