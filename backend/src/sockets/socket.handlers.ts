@@ -64,7 +64,30 @@ export const registerSocketHandlers = (io: Server) => {
           return;
         }
 
-        const message = await prisma.message.create({
+                // Block check for 1-on-1 conversations
+        const conv = await prisma.conversation.findUnique({
+          where: { id: conversationId },
+          include: { participants: true },
+        });
+        if (conv && !conv.isGroup) {
+          const other = conv.participants.find(p => p.userId !== userId);
+          if (other) {
+            const blocked = await prisma.blockedUser.findFirst({
+              where: {
+                OR: [
+                  { blockerId: userId, blockedUserId: other.userId },
+                  { blockerId: other.userId, blockedUserId: userId }
+                ]
+              }
+            });
+            if (blocked) {
+              if (callback) callback({ error: 'You cannot message this user because of block settings.' });
+              return;
+            }
+          }
+        }
+
+const message = await prisma.message.create({
           data: {
             content,
             messageType: messageType ?? 'TEXT',

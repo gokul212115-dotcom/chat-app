@@ -473,3 +473,24 @@ export async function toggleArchive(req: Request, res: Response) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+
+export async function clearConversation(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const conversationId = parseInt(req.params.conversationId, 10);
+    if (isNaN(conversationId)) return res.status(400).json({ message: 'Invalid conversation' });
+
+    await prisma.clearedConversation.upsert({
+      where: { userId_conversationId: { userId, conversationId } },
+      update: { clearedAt: new Date() },
+      create: { userId, conversationId },
+    });
+
+    return res.json({ message: 'Chat cleared' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}

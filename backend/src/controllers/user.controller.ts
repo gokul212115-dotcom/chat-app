@@ -118,3 +118,61 @@ export async function searchUsers(req: Request, res: Response) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+
+export async function blockUser(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const targetUserId = parseInt(req.params.userId, 10);
+    if (isNaN(targetUserId)) return res.status(400).json({ message: 'Invalid user' });
+    if (userId === targetUserId) return res.status(400).json({ message: 'Cannot block yourself' });
+
+    await prisma.blockedUser.upsert({
+      where: { blockerId_blockedUserId: { blockerId: userId, blockedUserId: targetUserId } },
+      update: {},
+      create: { blockerId: userId, blockedUserId: targetUserId },
+    });
+    return res.json({ message: 'User blocked' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function unblockUser(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const targetUserId = parseInt(req.params.userId, 10);
+    if (isNaN(targetUserId)) return res.status(400).json({ message: 'Invalid user' });
+
+    await prisma.blockedUser.deleteMany({
+      where: { blockerId: userId, blockedUserId: targetUserId },
+    });
+    return res.json({ message: 'User unblocked' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function checkBlocked(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const targetUserId = parseInt(req.params.userId, 10);
+    const [blockedByMe, blockedMe] = await Promise.all([
+      prisma.blockedUser.findUnique({
+        where: { blockerId_blockedUserId: { blockerId: userId, blockedUserId: targetUserId } },
+      }),
+      prisma.blockedUser.findUnique({
+        where: { blockerId_blockedUserId: { blockerId: targetUserId, blockedUserId: userId } },
+      }),
+    ]);
+    return res.json({ blockedByMe: !!blockedByMe, blockedMe: !!blockedMe });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
