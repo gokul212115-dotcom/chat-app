@@ -68,7 +68,12 @@ export async function uploadFile(file, filename) {
     formData.append('file', file, filename);
     try {
         const response = await api.post('/upload', formData);
-        return response.data;
+        // Ensure the URL is absolute (pointing to the backend, not the frontend dev server)
+        const data = response.data;
+        if (data.url && !data.url.startsWith('http')) {
+            data.url = BASE_URL.replace('/api', '') + data.url; // e.g., http://localhost:3000/uploads/...
+        }
+        return data;
     }
     catch (error) {
         throw new Error('File upload failed');

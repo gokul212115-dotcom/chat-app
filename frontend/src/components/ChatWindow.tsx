@@ -371,7 +371,13 @@ const handleInputChange = (value: string) => {
   };
 
   return (
-    <div className="w-full md:flex-1 h-screen flex flex-col" style={wallpaper ? { backgroundColor: wallpaper } : { backgroundColor: "black" }}>
+    <div className="w-full md:flex-1 h-screen flex flex-col" style={
+    wallpaper
+      ? wallpaper.startsWith('http') || wallpaper.startsWith('/')
+        ? { backgroundImage: `url(${wallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
+        : { backgroundColor: wallpaper }
+      : { backgroundColor: 'black' }
+  }>
       {isCameraModalOpen && (
         <CameraModal onClose={() => { stopCamera(); setIsCameraModalOpen(false); }} onSend={handleSendPhoto} />
       )}

@@ -314,7 +314,11 @@ export default function ChatWindow({ conversationId, onStartCall, onBack, }) {
             console.error(error);
         });
     };
-    return (_jsxs("div", { className: "w-full md:flex-1 h-screen flex flex-col", style: wallpaper ? { backgroundColor: wallpaper } : { backgroundColor: "black" }, children: [isCameraModalOpen && (_jsx(CameraModal, { onClose: () => { stopCamera(); setIsCameraModalOpen(false); }, onSend: handleSendPhoto })), isGroupInfoOpen && conversation && conversation.isGroup && (_jsx(GroupInfoModal, { conversation: conversation, onClose: () => setIsGroupInfoOpen(false), onUpdated: (updated) => {
+    return (_jsxs("div", { className: "w-full md:flex-1 h-screen flex flex-col", style: wallpaper
+            ? wallpaper.startsWith('http') || wallpaper.startsWith('/')
+                ? { backgroundImage: `url(${wallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
+                : { backgroundColor: wallpaper }
+            : { backgroundColor: 'black' }, children: [isCameraModalOpen && (_jsx(CameraModal, { onClose: () => { stopCamera(); setIsCameraModalOpen(false); }, onSend: handleSendPhoto })), isGroupInfoOpen && conversation && conversation.isGroup && (_jsx(GroupInfoModal, { conversation: conversation, onClose: () => setIsGroupInfoOpen(false), onUpdated: (updated) => {
                     setConversations(conversations.map((c) => (c.id === updated.id ? updated : c)));
                 }, onLeft: () => {
                     setIsGroupInfoOpen(false);
