@@ -13,6 +13,8 @@ router.delete('/:conversationId/members/:memberId', conversationController.remov
 router.post('/:conversationId/leave', conversationController.leaveGroup);
 router.patch('/:conversationId', conversationController.updateGroup);
 router.post('/:conversationId/archive', conversationController.toggleArchive);
+router.post("/:conversationId/mute", authMiddleware, conversationController.toggleMute);
+router.post("/:conversationId/wallpaper", authMiddleware, conversationController.setWallpaper);
 router.post("/:conversationId/clear", authMiddleware, conversationController.clearConversation);
 router.post("/:conversationId/clear", authMiddleware, conversationController.clearConversation);
 

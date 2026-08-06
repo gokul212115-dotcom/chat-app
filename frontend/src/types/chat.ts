@@ -22,6 +22,7 @@ export interface Conversation {
   groupName: string | null;
   groupAvatarUrl?: string | null;
   isArchived?: boolean;
+  isMuted?: boolean;
   participants: ConversationParticipant[];
   lastMessage: LastMessagePreview | null;
 }

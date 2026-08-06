@@ -174,6 +174,7 @@ export async function listConversations(req: Request, res: Response) {
         isGroup: conversation.isGroup,
         groupName: conversation.groupName,
         isArchived: myParticipant?.isArchived ?? false,
+        isMuted: myParticipant?.isMuted ?? false,
         participants: conversation.participants.map(participant => ({
           id: participant.userId,
           name: participant.user.name,
@@ -512,6 +513,49 @@ export async function clearConversation(req: Request, res: Response) {
     });
 
     return res.json({ message: 'Chat cleared' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function toggleMute(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const conversationId = parseInt(req.params.conversationId, 10);
+    if (isNaN(conversationId)) return res.status(400).json({ message: 'Invalid conversation' });
+
+    const participant = await prisma.conversationParticipant.findUnique({
+      where: { conversationId_userId: { conversationId, userId } },
+    });
+    if (!participant) return res.status(404).json({ message: 'Participant not found' });
+
+    const updated = await prisma.conversationParticipant.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { isMuted: !participant.isMuted },
+    });
+
+    return res.json({ isMuted: updated.isMuted });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function setWallpaper(req: Request, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const conversationId = parseInt(req.params.conversationId, 10);
+    const { wallpaper } = req.body as { wallpaper?: string };
+
+    const updated = await prisma.conversationParticipant.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { wallpaper: wallpaper || null },
+    });
+
+    return res.json({ wallpaper: updated.wallpaper });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Internal server error' });

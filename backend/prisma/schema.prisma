@@ -69,6 +69,7 @@ model ConversationParticipant {
   joinedAt       DateTime     @default(now())
   isMuted        Boolean      @default(false)
   isArchived     Boolean      @default(false)
+  wallpaper      String?
 
   @@unique([conversationId, userId])
 }
