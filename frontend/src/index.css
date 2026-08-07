@@ -27,3 +27,16 @@
 .shadow-theme-primary {
   box-shadow: 0 10px 15px -3px var(--color-primary-light, rgba(16,185,129,0.1));
 }
+
+/* Lock the app to the viewport so only inner scroll regions move —
+   prevents mobile keyboard from scrolling the whole page and hiding
+   the header/input bar. */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100dvh;
+  overflow: hidden;
+}
