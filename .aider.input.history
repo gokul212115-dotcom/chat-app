@@ -1,0 +1,627 @@
+
+# 2026-07-21 12:23:46.763577
++yes
+
+# 2026-07-21 12:24:23.443585
++echo 'export OLLAMA_API_BASE=http://localhost:11434' >> ~/.bashrc
++source ~/.bashrc
+
+# 2026-07-21 12:24:27.859814
++yes
+
+# 2026-07-21 12:47:07.459363
++no
+
+# 2026-07-21 12:48:50.827374
++You are an expert full-stack software architect.
++
++We are building a production-grade real-time chat application similar to WhatsApp.
++
++Tech stack (for context only — do not implement anything yet):
++- Backend: Node.js, Express, TypeScript, PostgreSQL, Prisma, Socket.IO, JWT
++- Frontend: React, TypeScript, Vite, Tailwind CSS, Zustand, Socket.IO client
++- Mobile: React Native (later phase)
++
++TASK — Phase 1 only:
++
++Create the complete top-level project folder and file structure. Do NOT write any real logic, functions, or business code yet. Only:
++
++1. Create folders for: backend, frontend, shared (for shared TypeScript types between backend and frontend), docs.
++2. Inside backend, set up an empty TypeScript + Express skeleton: package.json, tsconfig.json, a src folder with subfolders for routes, controllers, services, middleware, sockets, prisma, config, utils. Include a minimal src/index.ts that just starts an empty Express server on a port from .env.
++3. Inside frontend, set up an empty Vite + React + TypeScript skeleton with Tailwind installed and configured. Folder structure: src/components, src/pages, src/hooks, src/store, src/lib, src/types.
++4. Add a root .gitignore covering node_modules, .env, dist, build.
++5. Add an empty .env.example in backend listing the environment variables we will need later (DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, PORT, CLIENT_URL) — no real values.
++6. Create a root README.md with just the project name and a one-paragraph description. No setup instructions yet, we'll add those at the end.
++
++Do not install any database, do not write Prisma schema, do not write any routes, do not write any React components beyond the default Vite starter. This phase is structure only.
++
++After creating everything, list out the full folder tree so I can review it.
+
+# 2026-07-21 13:28:28.347197
++yes
+
+# 2026-07-21 13:43:33.053020
++pwd
+
+# 2026-07-21 13:44:02.946897
++yes
+
+# 2026-07-22 06:49:56.231191
++no
+
+# 2026-07-22 06:53:34.015467
++We are continuing the WhatsApp-clone chat app project. Phase 1 (folder structure) is already complete.
++
++TASK — Phase 2 only: Database schema.
++
++1. Set up Prisma in the backend (install prisma and @prisma/client, initialize it).
++2. Create the complete schema.prisma file with these models and proper relations:
++
++- User: id, phoneNumber (unique), email (optional, unique), passwordHash, name, avatarUrl, statusMessage, isOnline, lastSeenAt, createdAt, updatedAt
++- Contact: id, ownerId (User), contactUserId (User), createdAt
++- Conversation: id, isGroup (boolean), groupName (optional), groupAvatarUrl (optional), createdAt, updatedAt
++- ConversationParticipant: id, conversationId, userId, role (enum: MEMBER, ADMIN), joinedAt, isMuted, isArchived
++- Message: id, conversationId, senderId, content (optional, for text), messageType (enum: TEXT, IMAGE, VIDEO, AUDIO, DOCUMENT), replyToMessageId (optional, self-relation), isEdited, isDeletedForEveryone, createdAt, updatedAt
++- MessageStatus: id, messageId, userId, status (enum: SENT, DELIVERED, READ), updatedAt
++- MessageReaction: id, messageId, userId, emoji, createdAt
++- MediaAttachment: id, messageId, url, mimeType, sizeBytes, durationSeconds (optional, for audio/video)
++
++3. Add appropriate @@unique, @@index, and onDelete behavior where sensible (e.g. cascade delete messages when a conversation is deleted).
++4. Do not write any actual API routes or business logic yet — schema only.
++5. After creating schema.prisma, run `npx prisma generate` to confirm it's valid, and show me the output.
++
++Do not attempt to run migrations yet — I need to add my real database connection string first.
+
+# 2026-07-22 06:54:46.351235
++curl http://172.24.240.1:11434
+
+# 2026-07-22 06:54:49.630980
++no
+
+# 2026-07-22 06:56:05.727392
++We are continuing the WhatsApp-clone chat app project. Phase 1 (folder structure) is already complete.
++
++TASK — Phase 2 only: Database schema.
++
++1. Set up Prisma in the backend (install prisma and @prisma/client, initialize it).
++2. Create the complete schema.prisma file with these models and proper relations:
++
++- User: id, phoneNumber (unique), email (optional, unique), passwordHash, name, avatarUrl, statusMessage, isOnline, lastSeenAt, createdAt, updatedAt
++- Contact: id, ownerId (User), contactUserId (User), createdAt
++- Conversation: id, isGroup (boolean), groupName (optional), groupAvatarUrl (optional), createdAt, updatedAt
++- ConversationParticipant: id, conversationId, userId, role (enum: MEMBER, ADMIN), joinedAt, isMuted, isArchived
++- Message: id, conversationId, senderId, content (optional, for text), messageType (enum: TEXT, IMAGE, VIDEO, AUDIO, DOCUMENT), replyToMessageId (optional, self-relation), isEdited, isDeletedForEveryone, createdAt, updatedAt
++- MessageStatus: id, messageId, userId, status (enum: SENT, DELIVERED, READ), updatedAt
++- MessageReaction: id, messageId, userId, emoji, createdAt
++- MediaAttachment: id, messageId, url, mimeType, sizeBytes, durationSeconds (optional, for audio/video)
++
++3. Add appropriate @@unique, @@index, and onDelete behavior where sensible (e.g. cascade delete messages when a conversation is deleted).
++4. Do not write any actual API routes or business logic yet — schema only.
++5. After creating schema.prisma, run `npx prisma generate` to confirm it's valid, and show me the output.
++
++Do not attempt to run migrations yet — I need to add my real database connection string first.
+
+# 2026-07-22 07:19:06.735367
++yes
+
+# 2026-07-22 07:54:41.092198
++/exit
+
+# 2026-07-22 09:07:44.853567
++We are continuing the WhatsApp-clone chat app project. Phase 1 (folder structure) and Phase 2 (Prisma schema + migration) are complete and working.
++
++TASK — Phase 3 only: Authentication.
++
++1. Install needed backend packages: bcrypt, jsonwebtoken, zod, and their @types dev packages.
++2. Create src/services/auth.service.ts with functions: hashPassword, comparePassword, generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken. Use JWT_SECRET and JWT_REFRESH_SECRET from process.env. Access token expires in 15m, refresh token in 7d.
++3. Create src/controllers/auth.controller.ts with handlers: signup, login, refreshToken, logout.
++   - signup: accepts phoneNumber, name, password. Validates with zod. Checks phoneNumber isn't already taken. Hashes password. Creates user. Returns access + refresh tokens.
++   - login: accepts phoneNumber, password. Validates with zod. Verifies user exists and password matches. Returns access + refresh tokens.
++   - refreshToken: accepts a refresh token, verifies it, issues a new access token.
++   - logout: stateless for now, just returns success (we'll add token blacklisting later if needed).
++4. Create src/middleware/auth.middleware.ts — an Express middleware that reads the Authorization: Bearer <token> header, verifies the access token, and attaches the decoded user id to req.userId. Returns 401 if missing or invalid.
++5. Create src/routes/auth.routes.ts with POST /signup, POST /login, POST /refresh, POST /logout, wired to the controller functions.
++6. Wire the auth routes into src/index.ts under the path /api/auth.
++7. Do not build any other routes yet (users, contacts, conversations) — only auth in this phase.
++
++After creating everything, show me the final file list.
+
+# 2026-07-22 10:01:11.532036
++yes
+
+# 2026-07-22 10:34:20.396211
++/exit
+
+# 2026-07-22 12:09:58.952247
++We are continuing the WhatsApp-clone chat app project. Phase 1 (structure), Phase 2 (database schema), and Phase 3 (authentication) are complete and tested working.
++
++Important: reuse the existing authMiddleware from src/middleware/auth.middleware.ts (exported as authMiddleware) on every route below except none are public — all these routes require a logged-in user. It attaches req.userId (a number) to the request.
++
++TASK — Phase 4 only: Users, Contacts, and Conversations REST APIs.
++
++1. Create src/controllers/user.controller.ts:
++   - getMe: returns the logged-in user's own profile (id, phoneNumber, email, name, avatarUrl, statusMessage, isOnline, lastSeenAt) using req.userId. Never return passwordHash.
++   - updateMe: accepts optional name, avatarUrl, statusMessage in the body, validates with zod, updates the logged-in user, returns the updated profile (no passwordHash).
++   - searchUsers: accepts a query param "phoneNumber", finds a user by exact phone number match (excluding the requester), returns basic public info (id, name, phoneNumber, avatarUrl) or 404 if not found.
++
++2. Create src/controllers/contact.controller.ts:
++   - addContact: accepts contactUserId in the body, creates a Contact row linking req.userId as owner to that user, returns the created contact with the contact user's basic info included. Handle duplicate contact gracefully (409 if already exists).
++   - listContacts: returns all contacts for req.userId, including each contact user's basic info (id, name, phoneNumber, avatarUrl, isOnline, lastSeenAt).
++   - removeContact: accepts contactUserId as a URL param, deletes that contact for req.userId.
++
++3. Create src/controllers/conversation.controller.ts:
++   - createConversation: accepts participantUserIds (array of user ids) and optional isGroup, groupName. If isGroup is false or omitted and there's already a 1:1 conversation between the two users, return that existing conversation instead of creating a duplicate. Creates the Conversation and ConversationParticipant rows (creator gets ADMIN role if isGroup, MEMBER otherwise). Returns the created/found conversation with participants included.
++   - listConversations: returns all conversations req.userId participates in, ordered by most recent message activity, including participants' basic info and the last message (if any) as a preview. Paginate with a "cursor" and "limit" query param (default limit 20).
++   - getConversationMessages: accepts conversationId as a URL param, verifies req.userId is a participant (403 if not), returns messages for that conversation ordered newest-first, paginated with "cursor" and "limit" query params (default limit 30). Include sender basic info and any message statuses relevant to req.userId.
++
++4. Create src/routes/user.routes.ts, src/routes/contact.routes.ts, src/routes/conversation.routes.ts wiring these controllers with authMiddleware applied to every route.
++
++5. Wire these new route files into src/index.ts under /api/users, /api/contacts, /api/conversations respectively.
++
++6. Use zod for input validation on every endpoint that accepts a body or meaningful params. Wrap all database logic in try/catch and return appropriate status codes (400 for validation errors, 404 for not found, 403 for forbidden, 409 for conflict, 500 for unexpected errors) with a { message: string } JSON body — never leak raw error objects or passwordHash to the client.
++
++Do not implement Socket.IO / real-time messaging yet — that's Phase 5. This phase is REST APIs only, backed by the existing Prisma models.
++
++After creating everything, show me the final file list.
+
+# 2026-07-22 12:24:14.039071
++yes
+
+# 2026-07-22 13:35:48.077083
++We are continuing the WhatsApp-clone chat app project. Phases 1-4 are complete and tested working: folder structure, Prisma schema, authentication (JWT), and REST APIs for users/contacts/conversations.
++
++Important context:
++- The Express app and HTTP server are created in src/index.ts.
++- authMiddleware (from src/middleware/auth.middleware.ts) verifies JWT access tokens from the Authorization header for REST routes.
++- Prisma models: User, Conversation, ConversationParticipant, Message, MessageStatus, MessageReaction, MediaAttachment (see prisma/schema.prisma for exact field names — do not guess field names, use exactly what's in the schema).
++
++TASK — Phase 5 only: Socket.IO real-time layer.
++
++1. Install socket.io on the backend if not already present (it's already in package.json, just make sure it's installed).
++
++2. Create src/sockets/socket.auth.ts: a Socket.IO middleware function that reads the JWT access token from the connection handshake (socket.handshake.auth.token), verifies it using the existing verifyAccessToken function from auth.service.ts, and attaches the decoded userId to socket.data.userId. If verification fails, reject the connection with an error.
++
++3. Create src/sockets/socket.handlers.ts with a function `registerSocketHandlers(io: Server)` that sets up:
++   - On connection: mark the user online in the database (isOnline: true), join the socket to a room named `user:<userId>` for direct targeting, and join rooms for every conversation the user participates in (room name `conversation:<conversationId>`).
++   - Event "message:send": accepts { conversationId, content, messageType, replyToMessageId }. Verifies the sender is a participant in that conversation. Creates the Message in the database. Emits "message:new" with the full message (including sender info) to everyone in the `conversation:<conversationId>` room, including the sender.
++   - Event "typing:start": accepts { conversationId }. Broadcasts "typing:update" with { conversationId, userId, isTyping: true } to everyone else in that conversation room (not back to the sender).
++   - Event "typing:stop": same as above but isTyping: false.
++   - Event "message:delivered": accepts { messageId }. Creates or updates a MessageStatus row for that message and the current user with status DELIVERED. Emits "message:status" with { messageId, userId, status: 'DELIVERED' } to the conversation room.
++   - Event "message:read": same pattern as delivered but status READ.
++   - On disconnect: mark the user offline (isOnline: false) and set lastSeenAt to now. Emit "presence:update" with { userId, isOnline: false, lastSeenAt } to all conversation rooms the user was part of.
++
++4. In src/index.ts, create the Socket.IO server attached to the existing HTTP server, apply the socket.auth middleware, and call registerSocketHandlers(io). Make sure CORS is configured to allow the frontend origin from CLIENT_URL in .env.
++
++5. Wrap all database operations in try/catch. If an operation fails, emit an "error" event back to that specific socket with a message, don't crash the connection.
++
++Do not build any frontend code yet — backend Socket.IO only, this phase.
++
++After creating everything, show me the final file list.
+
+# 2026-07-22 13:35:56.301223
++yes
+
+# 2026-07-23 07:53:47.093252
++We are continuing the WhatsApp-clone chat app project. The backend is fully working: authentication (JWT), REST APIs for users/contacts/conversations, and Socket.IO real-time messaging (events: message:send, message:new, typing:start, typing:stop, typing:update, message:delivered, message:read, message:status, presence:update).
++
++Backend base URL: http://localhost:3000
++Backend REST routes:
++- POST /api/auth/signup { phoneNumber, name, password } -> { user, accessToken, refreshToken }
++- POST /api/auth/login { phoneNumber, password } -> { user, accessToken, refreshToken }
++- POST /api/auth/refresh { refreshToken } -> { accessToken }
++- GET /api/users/me (auth required) -> user profile
++- GET /api/contacts (auth required) -> list of contacts
++- POST /api/contacts { contactUserId } (auth required)
++- POST /api/conversations/create { participantUserIds, isGroup?, groupName? } (auth required)
++- GET /api/conversations (auth required, query: cursor, limit) -> { conversations, nextCursor }
++- GET /api/conversations/:conversationId/messages (auth required, query: cursor, limit) -> { messages, nextCursor }
++
++All authenticated REST requests need header: Authorization: Bearer <accessToken>
++Socket.IO connection needs: io(url, { auth: { token: accessToken } })
++
++The frontend project already exists at frontend/ with Vite + React + TypeScript + Tailwind configured (from Phase 1). Folders exist: src/components, src/pages, src/hooks, src/store, src/lib, src/types.
++
++TASK — Phase 7a only: Auth screens + API client setup. Do not build the chat UI yet.
++
++1. Install axios, socket.io-client, zustand, react-router-dom in the frontend.
++
++2. Create src/lib/api.ts: an axios instance with baseURL from import.meta.env.VITE_API_URL (fallback http://localhost:3000/api), an interceptor that attaches the Authorization header from the auth store's accessToken, and a response interceptor that on 401 tries POST /auth/refresh once using the stored refreshToken, then retries the original request; if refresh also fails, clear the auth store and redirect to /login.
++
++3. Create src/store/authStore.ts using zustand: state { user, accessToken, refreshToken, isAuthenticated }, actions { login(user, accessToken, refreshToken), logout() }, persisted to localStorage using zustand's persist middleware.
++
++4. Create src/types/auth.ts with TypeScript interfaces: User { id, phoneNumber, name, email, avatarUrl, statusMessage, isOnline, lastSeenAt }, AuthResponse { user, accessToken, refreshToken }.
++
++5. Create src/pages/LoginPage.tsx: a form with phoneNumber and password fields, calls POST /auth/login via the api client, on success calls authStore.login(...) and navigates to "/". Show validation errors and a loading state. Style with Tailwind, clean centered card layout.
++
++6. Create src/pages/SignupPage.tsx: same pattern but phoneNumber, name, password fields, calls POST /auth/signup.
++
++7. Create src/App.tsx with react-router-dom routing: "/login" -> LoginPage, "/signup" -> SignupPage, "/" -> a placeholder "Home" page that just shows "Logged in as {user.name}" with a logout button (we'll replace this with the real chat UI in the next phase). Add a simple ProtectedRoute wrapper that redirects to /login if not authenticated.
++
++8. Update src/main.tsx to wrap App with BrowserRouter if not already done by react-router-dom setup conventions.
++
++Use Tailwind utility classes for all styling — clean, modern, WhatsApp-inspired color scheme (greens/teals), centered forms, rounded corners, subtle shadows.
++
++After creating everything, show me the final file list.
+
+# 2026-07-23 07:53:49.500591
++yes
+
+# 2026-07-23 07:55:07.220765
++d
+
+# 2026-07-23 07:56:25.812643
++We are continuing the WhatsApp-clone chat app project. The backend is fully working: authentication (JWT), REST APIs for users/contacts/conversations, and Socket.IO real-time messaging (events: message:send, message:new, typing:start, typing:stop, typing:update, message:delivered, message:read, message:status, presence:update).
++
++Backend base URL: http://localhost:3000
++Backend REST routes:
++- POST /api/auth/signup { phoneNumber, name, password } -> { user, accessToken, refreshToken }
++- POST /api/auth/login { phoneNumber, password } -> { user, accessToken, refreshToken }
++- POST /api/auth/refresh { refreshToken } -> { accessToken }
++- GET /api/users/me (auth required) -> user profile
++- GET /api/contacts (auth required) -> list of contacts
++- POST /api/contacts { contactUserId } (auth required)
++- POST /api/conversations/create { participantUserIds, isGroup?, groupName? } (auth required)
++- GET /api/conversations (auth required, query: cursor, limit) -> { conversations, nextCursor }
++- GET /api/conversations/:conversationId/messages (auth required, query: cursor, limit) -> { messages, nextCursor }
++
++All authenticated REST requests need header: Authorization: Bearer <accessToken>
++Socket.IO connection needs: io(url, { auth: { token: accessToken } })
++
++The frontend project already exists at frontend/ with Vite + React + TypeScript + Tailwind configured (from Phase 1). Folders exist: src/components, src/pages, src/hooks, src/store, src/lib, src/types.
++
++TASK — Phase 7a only: Auth screens + API client setup. Do not build the chat UI yet.
++
++1. Install axios, socket.io-client, zustand, react-router-dom in the frontend.
++
++2. Create src/lib/api.ts: an axios instance with baseURL from import.meta.env.VITE_API_URL (fallback http://localhost:3000/api), an interceptor that attaches the Authorization header from the auth store's accessToken, and a response interceptor that on 401 tries POST /auth/refresh once using the stored refreshToken, then retries the original request; if refresh also fails, clear the auth store and redirect to /login.
++
++3. Create src/store/authStore.ts using zustand: state { user, accessToken, refreshToken, isAuthenticated }, actions { login(user, accessToken, refreshToken), logout() }, persisted to localStorage using zustand's persist middleware.
++
++4. Create src/types/auth.ts with TypeScript interfaces: User { id, phoneNumber, name, email, avatarUrl, statusMessage, isOnline, lastSeenAt }, AuthResponse { user, accessToken, refreshToken }.
++
++5. Create src/pages/LoginPage.tsx: a form with phoneNumber and password fields, calls POST /auth/login via the api client, on success calls authStore.login(...) and navigates to "/". Show validation errors and a loading state. Style with Tailwind, clean centered card layout.
++
++6. Create src/pages/SignupPage.tsx: same pattern but phoneNumber, name, password fields, calls POST /auth/signup.
++
++7. Create src/App.tsx with react-router-dom routing: "/login" -> LoginPage, "/signup" -> SignupPage, "/" -> a placeholder "Home" page that just shows "Logged in as {user.name}" with a logout button (we'll replace this with the real chat UI in the next phase). Add a simple ProtectedRoute wrapper that redirects to /login if not authenticated.
++
++8. Update src/main.tsx to wrap App with BrowserRouter if not already done by react-router-dom setup conventions.
++
++Use Tailwind utility classes for all styling — clean, modern, WhatsApp-inspired color scheme (greens/teals), centered forms, rounded corners, subtle shadows.
++
++After creating everything, show me the final file list.
+
+# 2026-07-23 08:29:54.931379
++yes
+
+# 2026-07-23 09:40:40.238267
++We are continuing the WhatsApp-clone chat app project. Backend (auth, REST APIs, Socket.IO) and frontend auth screens are complete and tested working.
++
++Existing frontend files you should reuse, not recreate:
++- src/lib/api.ts (axios instance with Authorization header + token refresh)
++- src/store/authStore.ts (zustand store: user, accessToken, refreshToken, isAuthenticated, login(), logout())
++- src/types/auth.ts (User, AuthResponse interfaces)
++- src/App.tsx (has ProtectedRoute wrapper and routing — you will modify this to add new routes/replace HomePage)
++
++Backend REST routes available (baseURL already configured in api.ts, so just use relative paths like '/contacts'):
++- GET /users/me -> current user profile
++- GET /contacts -> array of { id, name, phoneNumber, avatarUrl, isOnline, lastSeenAt }
++- POST /contacts { contactUserId } -> add a contact
++- POST /conversations/create { participantUserIds: number[], isGroup?, groupName? } -> conversation object
++- GET /conversations?cursor&limit -> { conversations: [{ id, isGroup, groupName, participants: [{id, name, phoneNumber, avatarUrl, isOnline, lastSeenAt}], lastMessage: {id, content, senderId, createdAt} | null }], nextCursor }
++- GET /conversations/:conversationId/messages?cursor&limit -> { messages: [{ id, content, senderId, senderName, senderAvatarUrl, createdAt }], nextCursor }
++
++Socket.IO events (connect with: io('http://localhost:3000', { auth: { token: accessToken } })):
++- Emit "message:send" { conversationId, content, messageType: 'TEXT', replyToMessageId: null }, with an ack callback receiving { message } or { error }
++- Listen "message:new" -> full message object { id, conversationId, senderId, content, messageType, createdAt, sender: {id, name, avatarUrl} }
++- Emit "typing:start" { conversationId } and "typing:stop" { conversationId }
++- Listen "typing:update" -> { conversationId, userId, isTyping }
++- Listen "presence:update" -> { userId, isOnline, lastSeenAt }
++
++TASK — Phase 7b: Chat UI.
++
++1. Create src/hooks/useSocket.ts: a custom hook that creates a single socket.io-client connection using the accessToken from authStore, connects on mount, disconnects on unmount, and returns the socket instance (or null before connected). Reuse the same socket instance across the app (don't reconnect on every component render — use a ref or module-level singleton pattern).
++
++2. Create src/store/chatStore.ts using zustand: state for conversations (array), activeConversationId (number | null), messages (a Record<conversationId, Message[]>), typingUsers (a Record<conversationId, number[]> of userIds currently typing). Actions: setConversations, setActiveConversation, addMessage(conversationId, message) [prepend/append correctly, avoid duplicates by message id], setMessages(conversationId, messages), setUserTyping(conversationId, userId, isTyping), updateConversationLastMessage.
++
++3. Create src/types/chat.ts with interfaces: Contact, Conversation, Message, matching the backend response shapes described above.
++
++4. Create src/components/Sidebar.tsx: fetches conversations via GET /conversations on mount, lists them (avatar placeholder circle with first letter of name if no avatarUrl, name or group name, last message preview truncated, relative timestamp), clicking one sets it as active conversation and navigates to /chat/:conversationId. Include a simple "New Chat" button that prompts for a phone number, looks up nothing fancy — just calls POST /contacts is not needed here, instead directly try creating a conversation: ask for a phone number via a simple modal/prompt, then you'll need a way to find the user by phone number first. Add a small inline search using a phone number input, calling GET /users/search?phoneNumber=... if needed — if this endpoint doesn't exist yet, just build the UI assuming a function findUserByPhone(phoneNumber) exists in src/lib/api.ts that hits GET /users/search?phoneNumber= (create this function, we'll make sure the backend route matches).
++
++5. Create src/components/ChatWindow.tsx: shown when a conversation is active. Fetches message history via GET /conversations/:id/messages on mount/conversation change. Renders messages as bubbles (sender's own messages right-aligned in emerald, others left-aligned in dark gray), each with timestamp. Auto-scrolls to bottom on new message. Has a text input + send button at the bottom; pressing Enter or clicking send emits "message:send" via the socket, optimistically adds the message to chatStore, and clears the input. Shows a typing indicator ("... is typing") when typingUsers has entries for this conversation. Emits "typing:start" on input change (debounced) and "typing:stop" after 2 seconds of no typing or on send.
++
++6. Create src/pages/ChatPage.tsx: the main authenticated layout — Sidebar on the left (fixed width, full height), ChatWindow on the right (flex-grow), dark theme matching the login/signup pages (black background, emerald/teal accents). If no conversation is selected, show a placeholder "Select a conversation to start chatting" in the empty right panel.
++
++7. Update src/App.tsx: replace the placeholder HomePage with ChatPage at route "/", wrapped in ProtectedRoute. Add route "/chat/:conversationId" also rendering ChatPage (it should read the conversationId from useParams and set it as active).
++
++8. Wire useSocket into ChatPage (or a top-level provider) so the socket connects once when the user is authenticated, and listen for "message:new" (call chatStore.addMessage + updateConversationLastMessage), "typing:update" (call chatStore.setUserTyping), globally for the whole authenticated app, not just within ChatWindow, so messages arrive even if you're viewing a different conversation.
++
++Use Tailwind, dark theme (black/dark gray backgrounds, emerald-500/teal-500 accents, matching the login page style). Keep components reasonably sized and readable.
++
++Do not implement group chat creation, reactions, reply, edit, delete, or media upload yet — those are later phases. Just core 1:1 text messaging with real-time updates, typing indicators, and online status display.
++
++After creating everything, show me the final file list.
+
+# 2026-07-23 09:40:43.337250
++yes
+
+# 2026-07-24 10:47:41.177416
++d
+
+# 2026-07-24 10:48:06.553495
++hi
+
+# 2026-07-24 10:50:46.809658
++d
+
+# 2026-07-24 10:54:41.225483
++We are continuing the WhatsApp-clone chat app project. Backend (auth, REST APIs, Socket.IO messaging) and frontend (auth screens, real-time chat UI with typing indicators) are complete and tested working.
++
++Existing Prisma schema fields you must reuse exactly (do not guess names):
++- Message: id, conversationId, senderId, content, messageType, replyToMessageId, isEdited, isDeletedForEveryone, createdAt, updatedAt
++- MessageReaction: id, messageId, userId, emoji, createdAt (unique on [messageId, userId, emoji])
++
++Existing files to reuse, not recreate:
++- backend/src/sockets/socket.handlers.ts (has registerSocketHandlers(io) with socket.on(...) handlers already registered synchronously inside the connection handler — add new handlers in the same pattern, inside the same io.on('connection', ...) block, alongside the existing ones)
++- backend/src/middleware/auth.middleware.ts (authMiddleware, attaches req.userId)
++- frontend/src/store/chatStore.ts (zustand store: messages Record<conversationId, Message[]>, addMessage, setMessages)
++- frontend/src/components/ChatWindow.tsx (renders message bubbles, has socket from useSocket())
++- frontend/src/types/chat.ts (Message interface)
++- frontend/src/lib/api.ts (axios instance with auth already wired)
++
++TASK — Phase 9: Reply, Edit, Delete, Reactions.
++
++BACKEND changes:
++
++1. In backend/src/sockets/socket.handlers.ts, add these new socket.on handlers inside the existing connection block (do not remove or restructure existing handlers):
++
++   - "message:edit": accepts { messageId, content }. Verify the message exists and message.senderId === userId (403 via callback if not). Update content and set isEdited: true. Emit "message:updated" with the full updated message (include sender info) to the conversation room.
++
++   - "message:delete": accepts { messageId, forEveryone: boolean }. Verify the message exists and message.senderId === userId (403 via callback if not authorized, only the sender can delete for everyone; for "delete for me" we'd need a per-user hidden list which we don't have yet, so for now forEveryone must be true, ignore false / return an error for false). If forEveryone, set isDeletedForEveryone: true and content: null (keep the row, don't hard-delete, so message order/references stay intact). Emit "message:deleted" with { messageId, conversationId } to the conversation room.
++
++   - "reaction:add": accepts { messageId, emoji }. Verify sender is a participant in the message's conversation. Upsert a MessageReaction (unique on messageId+userId+emoji — if it already exists do nothing / return success). Emit "reaction:added" with { messageId, userId, emoji } to the conversation room.
++
++   - "reaction:remove": accepts { messageId, emoji }. Delete the matching MessageReaction row for this user. Emit "reaction:removed" with { messageId, userId, emoji } to the conversation room.
++
++   Wrap all in try/catch like the existing handlers, use callbacks for the emitting client's own confirmation/errors, and io.to(`conversation:${conversationId}`) for broadcasts (you'll need to fetch conversationId from the message record since payloads only include messageId).
++
++BACKEND cleanup (do this too, small fix):
++   - In backend/src/controllers/conversation.controller.ts and any other controller using `include: { user: true }` or `include: { sender: true }` on Message/Conversation queries, add a `select` instead of blanket `include: true` to exclude passwordHash from the nested user objects — select only id, name, phoneNumber, avatarUrl, isOnline, lastSeenAt, statusMessage. Do this for every query that includes user/sender data.
++
++FRONTEND changes:
++
++2. Update frontend/src/types/chat.ts: add optional fields to Message interface: replyToMessageId: number | null, isEdited: boolean, isDeletedForEveryone: boolean, reactions?: Array<{ userId: number, emoji: string }>, replyToMessage?: { id: number, content: string | null, senderName: string } | null.
++
++3. Update frontend/src/store/chatStore.ts: add actions updateMessage(conversationId, messageId, updates: Partial<Message>) and removeMessageContent(conversationId, messageId) [sets isDeletedForEveryone true, content null], and addReaction(conversationId, messageId, userId, emoji) / removeReaction(conversationId, messageId, userId, emoji) that mutate the reactions array on the matching message immutably.
++
++4. Update frontend/src/components/ChatWindow.tsx:
++   - Add hover-reveal action icons on each message bubble (small, minimal): Reply, and if it's your own message: Edit, Delete. Use simple text/emoji icons like "↩" "✎" "🗑" — no icon library needed.
++   - Clicking Reply sets a "replying to" preview above the input box showing the quoted message's sender + snippet, with an X to cancel. When sending with an active reply, include replyToMessageId in the message:send payload.
++   - If a message has replyToMessage data, render a small quoted snippet above the message content inside the bubble.
++   - Clicking Edit (own message only) turns that bubble's content into an inline editable text input with a checkmark to confirm — on confirm, emit "message:edit" via socket.
++   - Clicking Delete (own message only) asks for confirmation (simple window.confirm is fine), then emits "message:delete" with forEveryone: true.
++   - If a message isDeletedForEveryone, render it as italic gray text "This message was deleted" instead of the real content, no action icons on it.
++   - If a message isEdited, show a small "(edited)" label next to the timestamp.
++   - Add a simple reaction picker: a small "+" icon on hover that shows 4-5 common emoji (👍 ❤️ 😂 😮 😢) to pick from; clicking one emits "reaction:add". Render existing reactions as small pills below the message bubble showing emoji + count; clicking a pill you've already reacted with emits "reaction:remove".
++   - Listen for socket events "message:updated" (call chatStore.updateMessage), "message:deleted" (call chatStore.removeMessageContent), "reaction:added" / "reaction:removed" (call chatStore.addReaction / removeReaction) — register these listeners in ChatPage.tsx alongside the existing message:new and typing:update listeners, following the same pattern.
++
++Keep the dark theme (black/emerald/teal) consistent with existing components. Keep changes minimal and additive — do not restructure existing working code, only add to it.
++
++After creating everything, show me the final file list and a summary of exactly which existing files were modified vs newly created.
+
+# 2026-07-24 10:55:01.288832
++all
+
+# 2026-07-24 11:19:43.304728
++We are continuing the WhatsApp-clone chat app project. Backend (auth, REST APIs, Socket.IO messaging) and frontend chat UI are complete and tested working.
++
++Existing Prisma schema fields you must reuse exactly (do not guess names):
++- Message: id, conversationId, senderId, content, messageType, replyToMessageId, isEdited, isDeletedForEveryone, createdAt, updatedAt
++- MessageReaction: id, messageId, userId, emoji, createdAt (unique on [messageId, userId, emoji])
++
++Existing file to modify: backend/src/sockets/socket.handlers.ts (has registerSocketHandlers(io) with socket.on(...) handlers already registered synchronously inside the connection handler — add new handlers in the same pattern, inside the same io.on('connection', ...) block, alongside the existing ones. Do not remove or restructure existing handlers.)
++
++TASK — Phase 9a: Backend only. Add these new socket.on handlers:
++
++1. "message:edit": accepts { messageId, content }. Verify message.senderId === userId (callback error if not). Update content, set isEdited: true. Emit "message:updated" with the full updated message (include sender info) to the conversation room.
++
++2. "message:delete": accepts { messageId, forEveryone: boolean }. Verify message.senderId === userId. If forEveryone is true, set isDeletedForEveryone: true and content: null. If forEveryone is false, return a callback error saying that's not supported yet. Emit "message:deleted" with { messageId, conversationId } to the conversation room.
++
++3. "reaction:add": accepts { messageId, emoji }. Verify sender is a participant in the message's conversation. Upsert a MessageReaction (unique on messageId+userId+emoji). Emit "reaction:added" with { messageId, userId, emoji } to the conversation room.
++
++4. "reaction:remove": accepts { messageId, emoji }. Delete the matching MessageReaction row for this user+message+emoji. Emit "reaction:removed" with { messageId, userId, emoji } to the conversation room.
++
++Wrap all in try/catch, use callbacks for errors, use io.to(`conversation:${conversationId}`) for broadcasts (fetch conversationId from the message record first since payloads only include messageId).
++
++Only modify backend/src/sockets/socket.handlers.ts. Show me the full updated file when done.
+
+# 2026-07-24 11:19:46.991627
++yes
+
+# 2026-07-24 11:41:22.255493
++We are continuing the WhatsApp-clone chat app project. Backend Socket.IO already has message:edit, message:delete, reaction:add, reaction:remove handlers working (in backend/src/sockets/socket.handlers.ts) alongside the existing message:send, typing, presence handlers. Frontend has working auth, real-time chat UI (Sidebar, ChatWindow, ChatPage) with messaging and typing indicators.
++
++BACKEND CLEANUP (small, do this first):
++In backend/src/controllers/conversation.controller.ts, find every place using `include: { user: true }` on ConversationParticipant queries. Replace with `select` that only returns: id, name, phoneNumber, avatarUrl, isOnline, lastSeenAt, statusMessage — excluding passwordHash and other sensitive fields. Do this for all occurrences in the file (listConversations, createConversation, and any other function with this pattern).
++
++Also in backend/src/sockets/socket.handlers.ts, find every place using `include: { sender: true }` on Message queries (in message:send and message:edit handlers) and replace with `select` returning only: id, name, phoneNumber, avatarUrl, isOnline, lastSeenAt, statusMessage for the sender — same exclusion of passwordHash.
++
++FRONTEND — Phase 9b: Reply, Edit, Delete, Reactions UI.
++
++Existing Prisma-shaped Message fields available: id, conversationId, senderId, content, messageType, replyToMessageId, isEdited, isDeletedForEveryone, createdAt.
++
++1. Update frontend/src/types/chat.ts: add optional fields to the Message interface: replyToMessageId: number | null, isEdited: boolean, isDeletedForEveryone: boolean, reactions?: Array<{ userId: number, emoji: string }>, replyToMessage?: { id: number, content: string | null, senderName: string } | null.
++
++2. Update frontend/src/store/chatStore.ts: add these actions to the existing store (do not remove existing ones):
++   - updateMessage(conversationId: number, messageId: number, updates: Partial<Message>): finds the message in messages[conversationId] and merges updates immutably.
++   - removeMessageContent(conversationId: number, messageId: number): sets isDeletedForEveryone: true and content: null on that message.
++   - addReaction(conversationId: number, messageId: number, userId: number, emoji: string): adds { userId, emoji } to that message's reactions array if not already present (immutably).
++   - removeReaction(conversationId: number, messageId: number, userId: number, emoji: string): removes the matching { userId, emoji } entry from that message's reactions array.
++
++3. Update frontend/src/components/ChatWindow.tsx (this file already renders message bubbles and has access to `socket` from useSocket()):
++   - Add hover-reveal action icons on each message bubble: "↩" (Reply) always, and if isOwn: "✎" (Edit) and "🗑" (Delete).
++   - Reply: clicking it sets local state for "replyingTo" (the message being replied to), shown as a small preview above the input with an X to cancel. When sending, include replyToMessageId in the message:send payload if replyingTo is set, then clear it after sending.
++   - If a message has replyToMessage data, show a small quoted box above its content inside the bubble (sender name + snippet).
++   - Edit (own messages only): clicking turns the bubble into an inline text input pre-filled with current content, with a checkmark button to confirm. On confirm, emit socket.emit('message:edit', { messageId, content }, callback) and exit edit mode on success.
++   - Delete (own messages only): clicking shows window.confirm('Delete this message for everyone?'), if confirmed emit socket.emit('message:delete', { messageId, forEveryone: true }, callback).
++   - If message.isDeletedForEveryone, render italic gray "This message was deleted" instead of content, hide all action icons for that message.
++   - If message.isEdited, show small "(edited)" text next to the timestamp.
++   - Add a reaction picker: small "+" button visible on hover showing 5 emoji options (👍 ❤️ 😂 😮 😢) in a small popover; clicking one emits socket.emit('reaction:add', { messageId, emoji }). Below each message bubble, render existing reactions as small rounded pills (emoji + count); if the current user has that reaction, clicking the pill emits socket.emit('reaction:remove', { messageId, emoji }) instead.
++
++4. Update frontend/src/pages/ChatPage.tsx: in the existing useEffect that registers socket listeners (alongside message:new and typing:update), add:
++   - socket.on('message:updated', (message) => chatStore.updateMessage(message.conversationId, message.id, message))
++   - socket.on('message:deleted', ({ messageId, conversationId }) => chatStore.removeMessageContent(conversationId, messageId))
++   - socket.on('reaction:added', ({ messageId, userId, emoji }) => need conversationId — since payload doesn't include it, look up the message's conversationId from the store's messages state before calling addReaction, or track it via the currently active conversation if simpler)
++   - socket.on('reaction:removed', same pattern as reaction:added
++   - Clean up all new listeners in the effect's return/cleanup function alongside the existing ones.
++
++Keep the dark theme (black background, emerald-500/teal-500 accents) consistent with existing styling. Keep all changes additive — do not remove or restructure existing working functionality, only add to it.
++
++After making all changes, show me the full updated content of: frontend/src/components/ChatWindow.tsx and frontend/src/pages/ChatPage.tsx
+
+# 2026-07-24 11:41:25.767234
++all
+
+# 2026-07-25 04:18:01.065915
++We are continuing the WhatsApp-clone chat app project. New files already exist: backend/src/config/upload.ts (multer config, exports `upload` and `UPLOAD_DIR`), backend/src/controllers/upload.controller.ts (exports `uploadFile`), backend/src/routes/upload.routes.ts (exports a router with POST / wired to uploadFile, using authMiddleware).
++
++TASK: Update backend/src/index.ts to:
++1. Import the new upload routes: import uploadRoutes from './routes/upload.routes';
++2. Import UPLOAD_DIR from '../config/upload' — actually import { UPLOAD_DIR } from './config/upload';
++3. Import 'path' and Express's static middleware if not already imported.
++4. Add static file serving so uploaded files are publicly accessible: app.use('/uploads', express.static(UPLOAD_DIR));
++5. Mount the new route: app.use('/api/upload', uploadRoutes);
++6. Do this without removing or breaking any existing route registrations, middleware, or the Socket.IO setup already in the file.
++
++Show me the full updated file when done.
+
+# 2026-07-25 04:18:05.393410
++yes
+
+# 2026-07-25 04:49:45.915516
++We are continuing the WhatsApp-clone chat app project. New files already exist: backend/src/config/upload.ts (multer config, exports `upload` and `UPLOAD_DIR`), backend/src/controllers/upload.controller.ts (exports `uploadFile`), backend/src/routes/upload.routes.ts (exports a router with POST / wired to uploadFile, using authMiddleware).
++
++TASK: Update backend/src/index.ts to:
++1. Import the new upload routes: import uploadRoutes from './routes/upload.routes';
++2. Import { UPLOAD_DIR } from './config/upload'.
++3. Import 'path' and Express's static middleware if not already imported.
++4. Add static file serving so uploaded files are publicly accessible: app.use('/uploads', express.static(UPLOAD_DIR));
++5. Mount the new route: app.use('/api/upload', uploadRoutes);
++6. Do this without removing or breaking any existing route registrations, middleware, or the Socket.IO setup already in the file.
++
++Show me the full updated file when done.
+
+# 2026-07-25 04:49:48.162903
++yes
+
+# 2026-07-25 05:17:06.500510
++We are continuing the WhatsApp-clone chat app project. Backend has a working upload endpoint: POST /api/upload (multipart/form-data, field name "file", auth required via Authorization header) returns { url, mimeType, sizeBytes, originalName }. Uploaded files are served statically at http://localhost:3000<url>.
++
++Existing files to reuse, not recreate:
++- frontend/src/lib/api.ts (axios instance with auth header already attached automatically)
++- frontend/src/components/ChatWindow.tsx (has socket from useSocket(), handles message:send via socket.emit with { conversationId, content, messageType, replyToMessageId })
++- frontend/src/types/chat.ts (Message interface)
++
++Design decision: for non-text messages, the `content` field on Message stores the media URL returned from the upload endpoint. messageType is one of TEXT, IMAGE, VIDEO, AUDIO, DOCUMENT (already defined in the Prisma schema).
++
++TASK — Phase 6b: Voice messages.
++
++1. Create frontend/src/hooks/useAudioRecorder.ts: a custom hook using the browser's MediaRecorder API. Returns { isRecording, recordingSeconds, startRecording, stopRecording, audioBlob }. startRecording requests microphone access via navigator.mediaDevices.getUserMedia({ audio: true }), starts a MediaRecorder with mimeType 'audio/webm', collects chunks, tracks elapsed seconds with a timer. stopRecording stops the recorder and sets audioBlob to the final Blob. Handle permission denial gracefully by returning an error state.
++
++2. In frontend/src/lib/api.ts, add a function uploadFile(file: File | Blob, filename?: string): Promise<{ url: string; mimeType: string; sizeBytes: number }> that builds a FormData with the file appended as 'file', posts to '/upload' using the existing api axios instance (which already handles auth), and returns response.data. Reuse the existing api instance, don't create a new axios instance.
++
++3. Update frontend/src/components/ChatWindow.tsx:
++   - Add a microphone icon button next to the text input. Use the useAudioRecorder hook.
++   - Clicking it starts recording; button changes to show a stop icon and the elapsed recording time (e.g. "0:05"). Clicking again stops recording.
++   - When recording stops and audioBlob is available, immediately upload it via uploadFile, then emit message:send with { conversationId, content: uploadedUrl, messageType: 'AUDIO', replyToMessageId: replyingTo?.id ?? null }, same pattern as the existing handleSend for text.
++   - While uploading, show a small loading spinner/text near the mic button.
++   - In the message rendering logic, when message.messageType === 'AUDIO', render an HTML5 <audio controls src={message.content} /> element inside the bubble instead of plain text. Style the audio element to fit the dark theme reasonably (it's hard to fully restyle native audio controls, that's fine, just make sure it's not jarring against the black background — wrap it in a rounded container).
++   - Keep all existing functionality (reply, edit, delete, reactions) working for audio messages too where it makes sense (reactions and reply should still work on audio messages; edit should be disabled/hidden for non-text message types since there's no text to edit).
++
++Keep the dark theme (black/emerald/teal) consistent. Do not restructure existing working code, only add to it.
++
++After creating everything, show me the final file list.
+
+# 2026-07-25 05:17:10.259993
++all
+
+# 2026-07-25 07:48:49.277213
++YES
+
+# 2026-07-25 09:24:09.383562
++We are continuing the WhatsApp-clone chat app project. Voice messages (Phase 6b) are working: frontend/src/lib/api.ts has an uploadFile(file) function, frontend/src/components/ChatWindow.tsx has audio recording and playback wired to Socket.IO message:send.
++
++TASK — Phase 6c: Camera capture and image sending.
++
++1. Create frontend/src/hooks/useCamera.ts: a custom hook that manages camera access. Returns { videoRef (a ref to attach to a <video> element), isActive, error, startCamera, stopCamera, capturePhoto }. startCamera calls navigator.mediaDevices.getUserMedia({ video: true }) and attaches the stream to videoRef.current.srcObject. capturePhoto draws the current video frame to an offscreen canvas and returns a Promise<Blob> (using canvas.toBlob with image/jpeg). stopCamera stops all tracks on the stream. Handle permission denial by setting the error state.
++
++2. Create frontend/src/components/CameraModal.tsx: a full-screen modal overlay (dark semi-transparent backdrop) showing a live camera preview using the useCamera hook. Has a large circular capture button at the bottom center, and a close (X) button top-right. On capture, shows a preview of the captured photo with "Retake" and "Send" buttons. On Send, calls a prop function onSend(blob: Blob) passed in from the parent, then closes the modal. Style consistent with the dark theme (black background, emerald accent on the capture/send buttons).
++
++3. Update frontend/src/components/ChatWindow.tsx (Phase 6c part):
++   - Add a camera icon button next to the mic button (near the text input). Use a proper camera SVG icon (a rectangle with a lens circle inside), not a placeholder or broken shape.
++   - Clicking it opens the CameraModal.
++   - Pass an onSend handler that uploads the captured blob via uploadFile (as a file named "photo.jpg"), then emits message:send with { conversationId, content: uploadedUrl, messageType: 'IMAGE', replyToMessageId: replyingTo?.id ?? null }.
++   - In the message rendering logic, when message.messageType === 'IMAGE', render an <img src={message.content} className="rounded-lg max-w-xs cursor-pointer" /> inside the bubble instead of text. Clicking the image should open it full-screen in a simple lightbox overlay (click again or press Escape to close — a simple local state toggle is fine, no library needed).
++
++TASK — Phase 6d: Document/file sharing.
++
++4. Update frontend/src/components/ChatWindow.tsx (Phase 6d part):
++   - Add a paperclip icon button next to the camera and mic buttons, using a proper paperclip SVG icon.
++   - Clicking it triggers a hidden <input type="file"> click (any file type accepted, but reasonably validate client-side against common types: pdf, doc, docx, txt, and reject anything over 25MB before uploading, showing an alert if too large).
++   - On file selection, immediately upload via uploadFile(file, file.name), then emit message:send with { conversationId, content: uploadedUrl, messageType: 'DOCUMENT', replyToMessageId: replyingTo?.id ?? null }. Show a brief uploading indicator near the paperclip button during upload.
++   - In the message rendering logic, when message.messageType === 'DOCUMENT', render a file card instead of plain text: a small document icon (proper SVG, not emoji or broken shape), the original filename if available (if not tracked, extract a reasonable name from the URL), and the file size if available, with the whole card clickable as a link (<a href={message.content} target="_blank" rel="noopener noreferrer" download>) to download/open the file. Style as a rounded card matching the dark theme.
++
++Use clean, correct, standard SVG icons for camera, paperclip, and document (simple geometric shapes: camera = rounded rectangle with a circle inside for the lens; paperclip = a curved clip shape; document = a rectangle with a folded corner and a few lines). Do not use placeholder text or malformed paths — verify each SVG path is a real, recognizable icon shape before including it.
++
++Keep the dark theme (black/emerald/teal) consistent with existing components. Do not restructure existing working code (text, voice, reply, edit, delete, reactions), only add to it.
++
++After creating everything, show me the final file list.
+
+# 2026-07-25 09:24:12.639253
++all
+
+# 2026-07-25 13:02:15.009058
++yes
+
+# 2026-07-27 06:18:47.848847
++We are continuing the WhatsApp-clone chat app project. Backend has: GET /users/me, PATCH /users/me (updates name, avatarUrl, statusMessage), the User model has isOnline and lastSeenAt fields, Socket.IO emits "presence:update" with { userId, isOnline, lastSeenAt } on disconnect. Upload endpoint POST /api/upload exists and returns { url, mimeType, sizeBytes }. Frontend has a getMediaUrl(path) helper in src/lib/api.ts that prepends the backend origin to relative upload paths.
++
++Existing files to reuse:
++- frontend/src/lib/api.ts (axios instance, has uploadFile and getMediaUrl functions)
++- frontend/src/store/authStore.ts (user, accessToken, login, logout)
++- frontend/src/store/chatStore.ts (conversations, activeConversationId, messages, addMessage, setActiveConversation, and other existing actions)
++- frontend/src/components/Sidebar.tsx, ChatWindow.tsx, pages/ChatPage.tsx (existing chat UI)
++- frontend/src/types/chat.ts, types/auth.ts
++
++BACKEND TASK 1: Add a change-password endpoint.
++In backend/src/controllers/auth.controller.ts, add a new function changePassword(req, res): accepts { currentPassword, newPassword } from an authenticated user (req.userId), verifies currentPassword matches the stored hash using comparePassword from auth.service.ts, hashes newPassword with hashPassword, updates the user, returns { message: 'Password updated successfully' }. Validate newPassword is at least 6 characters with zod. Wire this into backend/src/routes/auth.routes.ts as POST /change-password, protected by authMiddleware. Confirm it's reachable at /api/auth/change-password.
++
++BACKEND TASK 2: Confirm/fix the user update endpoint.
++Check backend/src/controllers/user.controller.ts's updateMe function — ensure it accepts and updates name, avatarUrl, and statusMessage from the request body (all optional, zod validated), and returns the updated user object (excluding passwordHash). Fix if any of these fields are missing.
++
++FRONTEND TASK 1: Presence display.
++1. In frontend/src/components/Sidebar.tsx, for 1:1 conversations, show a small green dot (absolute positioned, bottom-right of the avatar circle) when the other participant's isOnline is true. Listen for the "presence:update" socket event (get the socket via the existing useSocket hook) and update the relevant conversation's participant isOnline/lastSeenAt in the chatStore in real time (add a new chatStore action updatePresence(userId, isOnline, lastSeenAt) that finds this user across all conversations' participants arrays and updates their status immutably).
++2. In frontend/src/components/ChatWindow.tsx header (where it currently only shows typing status), show "online" in green if the other participant is online, otherwise show "last seen {relative time}" in gray (write a formatLastSeen helper: "just now" if under a minute, "X min ago", "X hours ago", "X days ago", or the date if older than a week).
++
++FRONTEND TASK 2: Settings page.
++3. Create frontend/src/pages/SettingsPage.tsx with these sections, styled consistent with the existing dark theme (black background, emerald/teal accents, rounded cards):
++   - Header with a back arrow (navigate(-1)) and "Settings" title.
++   - Profile section: current avatar (circle, click to change, use getMediaUrl for displaying existing avatarUrl), clicking opens a hidden file input, on selection uploads via the existing uploadFile function then calls PATCH /users/me with the new avatarUrl, updates authStore's user. Editable name field and status message field (text inputs with a "Save" button that calls PATCH /users/me and updates authStore).
++   - Account section: display phone number as read-only text (label "Phone Number", not editable).
++   - Security section: "Change Password" — a small form with current password, new password, confirm new password fields, calls POST /auth/change-password, shows success/error message, clears fields on success.
++   - Logout button at the bottom (calls authStore.logout() and navigates to /login).
++4. Add a settings gear icon button (proper gear SVG, not emoji) in frontend/src/components/Sidebar.tsx header (next to "+ New Chat"), clicking navigates to /settings.
++5. Add the route in frontend/src/App.tsx: "/settings" wrapped in ProtectedRoute, rendering SettingsPage.
++
++FRONTEND TASK 3: Unread message counters.
++6. In frontend/src/store/chatStore.ts, add unreadCounts: Record<number, number> state, plus actions incrementUnread(conversationId) and clearUnread(conversationId).
++7. In frontend/src/pages/ChatPage.tsx's existing "message:new" socket handler: after addMessage, if the message's conversationId is NOT the currently active conversation AND the message wasn't sent by the current user, call chatStore.incrementUnread(message.conversationId).
++8. In the useEffect that sets the active conversation, also call chatStore.clearUnread(conversationId) for the newly active one.
++9. In frontend/src/components/Sidebar.tsx, show a small rounded-full bg-emerald-500 text-black text-xs px-2 py-0.5 badge with the unread count next to each conversation's timestamp if unreadCounts[conversation.id] > 0. Hide if 0.
++
++Keep all styling consistent with existing dark theme. Use proper, correct SVG icons (not emoji or malformed paths) for the settings gear and any new icons. Do not restructure existing working functionality (messaging, reply, edit, delete, reactions, voice, camera, gallery, documents), only add to it.
++
++After creating everything, show me the final file list.
+
+# 2026-07-27 06:18:51.328126
++all
