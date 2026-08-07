@@ -76,10 +76,9 @@ export interface UserSearchResult {
 }
 
 export async function findUserByPhone(rawPhone: string): Promise<UserSearchResult | null> {
-  const phoneNumber = encodeURIComponent(rawPhone);
   try {
     const response = await api.get<UserSearchResult>('/users/search', {
-      params: { phoneNumber },
+      params: { phoneNumber: rawPhone },
     });
     return response.data;
   } catch (error) {
