@@ -103,7 +103,7 @@ export default function Sidebar({ onStatusOpen }: { onStatusOpen?: () => void })
   };
 
   return (
-    <div className="w-full md:w-80 h-screen md:border-r border-white/10 bg-gray-950 flex flex-col">
+    <div className="w-full md:w-80 h-[100dvh] md:border-r border-white/10 bg-gray-950 flex flex-col">
       {/* Header with tab switcher */}
       <div className="p-4 border-b border-white/10">
         <div className="flex items-center justify-between mb-3">

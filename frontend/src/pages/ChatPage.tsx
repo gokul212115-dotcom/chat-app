@@ -112,13 +112,13 @@ export default function ChatPage() {
   const showChat = !isMobile || (isMobile && !!activeId);
 
   return (
-    <div className="flex h-screen bg-black overflow-hidden">
+    <div className="flex h-[100dvh] bg-black overflow-hidden">
       {showSidebar && (
         <Sidebar onStatusOpen={isMobile ? () => setShowStatusScreen(true) : undefined} />
       )}
 
       {isMobile && showStatusScreen && (
-        <div className="flex-1 flex flex-col h-screen">
+        <div className="flex-1 flex flex-col h-[100dvh]">
           <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3">
             <button onClick={() => setShowStatusScreen(false)} className="p-1 text-gray-400 hover:text-white">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">

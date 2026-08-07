@@ -371,7 +371,7 @@ const handleInputChange = (value: string) => {
   };
 
   return (
-    <div className="w-full md:flex-1 h-screen flex flex-col" style={
+    <div className="w-full md:flex-1 h-[100dvh] flex flex-col" style={
     wallpaper
       ? wallpaper.startsWith('http') || wallpaper.startsWith('/')
         ? { backgroundImage: `url(${wallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
