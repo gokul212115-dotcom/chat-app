@@ -104,6 +104,19 @@ export default function ChatWindow({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
+  // Track real visible viewport height so the chat container resizes when the
+  // mobile keyboard opens, instead of the browser scrolling the whole page
+  // (which drags the fixed header out of view).
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setViewportHeight(vv.height);
+    update();
+    vv.addEventListener('resize', update);
+    return () => vv.removeEventListener('resize', update);
+  }, []);
+
   const handleSend = () => {
     const content = input.trim();
     if (!content || !socket) return;
@@ -371,13 +384,14 @@ const handleInputChange = (value: string) => {
   };
 
   return (
-    <div className="w-full md:flex-1 h-[100dvh] flex flex-col" style={
-    wallpaper
+    <div className="w-full md:flex-1 flex flex-col" style={{
+    height: viewportHeight ? `${viewportHeight}px` : '100dvh',
+    ...(wallpaper
       ? wallpaper.startsWith('http') || wallpaper.startsWith('/')
         ? { backgroundImage: `url(${wallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
         : { backgroundColor: wallpaper }
-      : { backgroundColor: 'black' }
-  }>
+      : { backgroundColor: 'black' }),
+  }}>
       {isCameraModalOpen && (
         <CameraModal onClose={() => { stopCamera(); setIsCameraModalOpen(false); }} onSend={handleSendPhoto} />
       )}
