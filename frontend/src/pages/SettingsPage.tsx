@@ -109,7 +109,7 @@ export default function SettingsPage() {
   const handleCropConfirm = () => setCropImageSrc(null);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen h-screen overflow-y-auto bg-black text-white">
       <div className="max-w-lg mx-auto px-6 py-6">
         <div className="flex items-center gap-4 mb-8">
           <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-white">
