@@ -111,10 +111,18 @@ export default function ChatWindow({
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const update = () => setViewportHeight(vv.height);
+    const update = () => {
+      // vv.height already excludes the keyboard; vv.offsetTop accounts for
+      // any address-bar/toolbar shift, which varies by Android/Chrome version.
+      setViewportHeight(vv.height + vv.offsetTop);
+    };
     update();
     vv.addEventListener('resize', update);
-    return () => vv.removeEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
   }, []);
 
   const handleSend = () => {
