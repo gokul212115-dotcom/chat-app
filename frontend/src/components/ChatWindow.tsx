@@ -752,41 +752,13 @@ const handleInputChange = (value: string) => {
       )}
 
       <div className="px-6 py-4 border-t border-white/10 flex items-center gap-3">
-        {isRecording && (
-          <span className="text-gray-500 mr-2">
-            Recording: {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, '0')}
-          </span>
-        )}
-        {error && <span className="text-red-500 mr-2">{error}</span>}
-        <button
-          onClick={handleRecordClick}
-          className={`bg-theme-primary text-black font-semibold px-3 py-2 rounded-full text-sm ${
-            isRecording ? 'bg-red-500 hover:bg-red-400' : ''
-          }`}
-        >
-          {isRecording ? 'Stop' : <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
-            <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
-          </svg>}
-        </button>
+        {/* hidden file inputs stay mounted regardless of recording state */}
         <input
           type="file"
           accept=".pdf,.doc,.docx,.txt"
           onChange={handleFileChange}
           className="hidden"
         />
-        {isUploadingFile && (
-          <span className="text-gray-500 mr-2">Uploading...</span>
-        )}
-        <AttachmentMenu
-          onCameraClick={handleCaptureClick}
-          onGalleryClick={() => (document.querySelector('input[data-gallery="true"]') as HTMLInputElement).click()}
-          onDocumentClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement).click()}
-          onLocationClick={handleLocationClick}
-        />
-        {isUploadingFile && (
-          <span className="text-gray-500 text-xs">Uploading...</span>
-        )}
         <input
           type="file"
           accept="image/*"
@@ -794,11 +766,42 @@ const handleInputChange = (value: string) => {
           onChange={handleGallerySelect}
           className="hidden"
         />
-        {isBlocked ? (
-          <div className="flex-1 text-gray-400 text-sm text-center py-2">
-            You blocked this user. Unblock to send messages.
+        {isRecording ? (
+          <div className="flex-1 flex items-center gap-3 min-w-0">
+            <span className="text-red-400 text-sm whitespace-nowrap">
+              ● Recording: {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+            </span>
+            <button
+              onClick={handleRecordClick}
+              className="ml-auto bg-red-500 hover:bg-red-400 text-white font-semibold px-4 py-2 rounded-full text-sm whitespace-nowrap"
+            >
+              Stop &amp; Send
+            </button>
           </div>
-        ) : isBlocked ? (
+        ) : (
+          <>
+            {error && <span className="text-red-500 mr-2">{error}</span>}
+            <button
+              onClick={handleRecordClick}
+              className="bg-theme-primary text-black font-semibold px-3 py-2 rounded-full text-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+                <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
+              </svg>
+            </button>
+            {isUploadingFile && (
+              <span className="text-gray-500 mr-2">Uploading...</span>
+            )}
+            <AttachmentMenu
+              onCameraClick={handleCaptureClick}
+              onGalleryClick={() => (document.querySelector('input[data-gallery="true"]') as HTMLInputElement).click()}
+              onDocumentClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement).click()}
+              onLocationClick={handleLocationClick}
+            />
+          </>
+        )}
+        {!isRecording && (isBlocked ? (
           <div className="flex-1 text-gray-400 text-sm text-center py-2">
             You blocked this user. Unblock to send messages.
           </div>
@@ -821,7 +824,7 @@ const handleInputChange = (value: string) => {
               Send
             </button>
           </>
-        )}
+        ))}
       </div>
       {isContactInfoOpen && conversation && !conversation.isGroup && (
         <ContactInfoModal
