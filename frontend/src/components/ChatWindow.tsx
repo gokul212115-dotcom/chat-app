@@ -170,7 +170,7 @@ export default function ChatWindow({
       const myPart = conversation.participants.find(p => p.id === currentUser?.id);
       setWallpaper((myPart as any)?.wallpaper || null);
     }
-  }, [conversation, currentUser]);
+  }, [conversation?.id, currentUser]);
 const handleInputChange = (value: string) => {
     setInput(value);
     if (!socket) return;
