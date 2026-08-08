@@ -184,6 +184,7 @@ export async function listConversations(req: Request, res: Response) {
           lastSeenAt: participant.user.lastSeenAt,
           blockedByMe: blockedSet.has(participant.userId),
           blockedMe: blockedBySet.has(participant.userId),
+          wallpaper: participant.wallpaper,
         })),
         lastMessage: conversation.messages.length > 0 ? {
           id: conversation.messages[0].id,
