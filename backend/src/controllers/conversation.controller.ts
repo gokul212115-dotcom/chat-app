@@ -137,6 +137,7 @@ export async function listConversations(req: Request, res: Response) {
             joinedAt: true,
             isMuted: true,
             isArchived: true,
+            wallpaper: true,
             user: { select: userSelect },
           },
         },
