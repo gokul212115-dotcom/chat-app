@@ -837,23 +837,7 @@ const handleInputChange = (value: string) => {
           conversationId={conversationId}
           currentWallpaper={wallpaper}
           onClose={() => setIsWallpaperOpen(false)}
-          onSelect={(wp) => {
-                    setWallpaper(wp);
-                    // Update the conversation in the store so wallpaper persists after close/reopen
-                    const convos = useChatStore.getState().conversations;
-                    const updated = convos.map(c => {
-                      if (c.id === conversationId) {
-                        return {
-                          ...c,
-                          participants: c.participants.map(p =>
-                            p.id === currentUser?.id ? { ...p, wallpaper: wp } : p
-                          ),
-                        };
-                      }
-                      return c;
-                    });
-                    useChatStore.getState().setConversations(updated);
-                  }}
+          onSelect={(wp) => setWallpaper(wp)}
         />
       )}
     </div>
