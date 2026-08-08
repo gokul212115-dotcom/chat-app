@@ -837,7 +837,21 @@ const handleInputChange = (value: string) => {
           conversationId={conversationId}
           currentWallpaper={wallpaper}
           onClose={() => setIsWallpaperOpen(false)}
-          onSelect={(wp) => setWallpaper(wp)}
+          onSelect={(wp) => {
+            setWallpaper(wp);
+            setConversations(
+              conversations.map((c) =>
+                c.id === conversationId
+                  ? {
+                      ...c,
+                      participants: c.participants.map((p) =>
+                        p.id === currentUser?.id ? { ...p, wallpaper: wp } as any : p
+                      ),
+                    }
+                  : c
+              )
+            );
+          }}
         />
       )}
     </div>
